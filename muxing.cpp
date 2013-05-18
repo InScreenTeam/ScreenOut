@@ -1,3 +1,7 @@
+//   /SAFESEH:NO  - Project Options- Linker- command line for release
+
+
+
 extern "C" 
 {    
 	#include <libavformat\avformat.h>
@@ -14,15 +18,15 @@ extern "C"
 #pragma comment(lib, "lib\\swscale.lib")
 #pragma comment(lib, "lib\\avutil.lib")
 
-/* 5 seconds stream duration */
-#define STREAM_DURATION   10.0
-#define STREAM_FRAME_RATE 15 /* 25 images/s */
+
+#define STREAM_DURATION   30.0
+#define STREAM_FRAME_RATE 10 
 #define STREAM_NB_FRAMES  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
 
 
 static int sws_flags = SWS_BICUBIC;
-static Capture capture = Capture(NULL);
+static Capture capture = Capture(HEIGHT, WIDTH);
 
 /**************************************************************/
 /* audio output */
@@ -277,24 +281,14 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 	int out_width = bitmap.bmWidth;
 	int out_height =  bitmap.bmHeight;
 	cClrBits = (WORD)(bitmap.bmPlanes * bitmap.bmBitsPixel); 
-	if (cClrBits == 1) 
-		cClrBits = 1; 
-	else if (cClrBits <= 4) 
-		cClrBits = 4; 
-	else if (cClrBits <= 8) 
-		cClrBits = 8; 
-	else if (cClrBits <= 16) 
-		cClrBits = 16; 
-	else if (cClrBits <= 24) 
-		cClrBits = 24; 
-	else cClrBits = 32; 
+	
 	// Allocate memory for the BITMAPINFO structure.
-	if (cClrBits != 24) 
-		pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits)); 
-	else 
+	//if (cClrBits != 24) 
+	//	pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits)); 
+	//else 
 		pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER)); 
 
-	// Initialize the fields in the BITMAPINFO structure. 
+// Initialize the fields in the BITMAPINFO structure. 
 	pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER); 
 	pBitmapInfo->bmiHeader.biWidth = bitmap.bmWidth; 
 	pBitmapInfo->bmiHeader.biHeight = bitmap.bmHeight; 
@@ -305,14 +299,8 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 		pBitmapInfo->bmiHeader.biClrUsed = (1<<cClrBits); 
 //If the bitmap is not compressed, set the BI_RGB flag. 
 	pBitmapInfo->bmiHeader.biCompression = BI_RGB; 
-	// Compute the number of bytes in the array of color 
-	// indices and store the result in biSizeImage. 
-	//pBitmapInfo->bmiHeader.biSizeImage = (pBitmapInfo->bmiHeader.biWidth + 7) /8 * pBitmapInfo->bmiHeader.biHeight * cClrBits; 
-	// Set biClrImportant to 0, indicating that all of the 
-	// device colors are important. 
+
 	pBitmapInfo->bmiHeader.biClrImportant = 0; 
-	// now open file and save the data
-	
 	
 	if (!GetDIBits(capture.hdcScreen, HBITMAP(capture.hbmScreen), 0, (WORD)in_height, screenBuffer, pBitmapInfo, 
 		DIB_RGB_COLORS))
@@ -340,7 +328,7 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 		}
 	}	
 
-	
+	Sleep(35);
 
 
 }
@@ -524,7 +512,7 @@ int main(int argc, char **argv)
         } else {
             write_video_frame(oc, video_st);
             frame->pts += av_rescale_q(1, video_st->codec->time_base, video_st->time_base);
-		//	Sleep(55);
+			//Sleep(55);
         }
     }
 

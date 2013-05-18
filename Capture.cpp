@@ -12,17 +12,23 @@
 using namespace std;
 
 // class constructor
-Capture::Capture(HWND hSethWnd)
+Capture::Capture(UINT hieght, UINT width)
 {
 	hWnd = GetConsoleWindow();
-	havedata = false; // no image stored at start.
+	haveData = false; // no image stored at start.
 	       //  wrong = create a device-context, this will be the source to copy from.
 	hdcScreen = CreateDC(L"DISPLAY", // pointer to string specifying driver name 
 						 NULL,	     // pointer to string specifying device name 
 						 NULL,  	 // do not use; set to NULL 
 						 NULL);		 // pointer to optional printer data 
+		// we need to create a CompatibleDC with 'hdcScreen' because
+// CreateCompatibleBitmap() only accepts this type of handle.
+	hdcCompatible = CreateCompatibleDC(hdcScreen); 
+// now we define the handle to the compatible bitmap
+// and we point it to 'hdcScreen' where it is saved.
+		
 }
-// class destructor
+
 Capture::~Capture()
 {
 	if (hbmScreen > 0)
@@ -35,7 +41,7 @@ Capture::~Capture()
 
 HWND Capture::GetConsoleHwnd(void)
 {
-#define MY_BUFSIZE 1024 // Размер буфера для заголовка консольного окна.
+	#define MY_BUFSIZE 1024 // Размер буфера для заголовка консольного окна.
 	HWND hwndFound;         // Это то, что будет возвращено.
 	char pszNewWindowTitle[MY_BUFSIZE]; // Уникальный заголовок окна.
 	char pszOldWindowTitle[MY_BUFSIZE]; // Изначальный заголовок окна.
@@ -43,29 +49,17 @@ HWND Capture::GetConsoleHwnd(void)
 	wsprintf((LPWSTR)pszNewWindowTitle, L"%d/%d",
 		GetTickCount(),
 		GetCurrentProcessId());
-
-	
-
 	SetConsoleTitle((LPWSTR)pszNewWindowTitle);
-
-	
-
 	Sleep(40);
-
-	
-
 	hwndFound=FindWindow(NULL, (LPCWSTR)pszNewWindowTitle);
-
-	
-
 	SetConsoleTitle((LPCWSTR)pszOldWindowTitle);
-
 	return(hwndFound);
-} 
+}
+ 
 // copies the stored image to another application handle
 void Capture::CopyTo(HWND hwnd)
 {
-	if (!havedata) return; // cannot proceed, we have nothing to copy!
+	if (!haveData) return; // cannot proceed, we have nothing to copy!
 	HDC screendata =  GetDC(hwnd); // the area to copy to...
 	// make the transfer using stored data
 	BitBlt(	screendata,		// handle to destination device context 
@@ -88,23 +82,11 @@ void Capture::TakePic(int top, int left, int bottom, int right)
 	Left = left;
 	Bottom = bottom; 
 	Right = right; // save co-ordinates
-	int width = right-left; // width for bitmap object
-	int height = bottom; // height for bitmap object
 
-	
-
-	// we need to create a CompatibleDC with 'hdcScreen' because
-	// CreateCompatibleBitmap() only accepts this type of handle.
-	hdcCompatible = CreateCompatibleDC(hdcScreen); 
-
-	// now we define the handle to the compatible bitmap
-	// and we point it to 'hdcScreen' where it is saved.
 	hbmScreen =  CreateCompatibleBitmap(
 		hdcScreen,	// handle to device context 
-		width,		// width of bitmap, in pixels  
-		height 		// height of bitmap, in pixels  
-		);
-
+		right-left,		// width of bitmap, in pixels  
+		bottom);	// height of bitmap, in pixels  
 	// The SelectObject() function selects an object into the specified device context.
 	// The new object replaces the previous object of the same type.
 	SelectObject(hdcCompatible, hbmScreen); 
@@ -122,7 +104,7 @@ void Capture::TakePic(int top, int left, int bottom, int right)
 		SRCCOPY 		// raster operation code 
 		);
 
-	havedata = true; // we now have a stored image.
+	haveData = true; 
 }
 void Capture::WriteBMP(const HBITMAP hBitmap, LPTSTR filename, HDC hDC)
 {

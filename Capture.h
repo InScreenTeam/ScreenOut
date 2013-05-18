@@ -30,10 +30,11 @@ protected:
 	int Left; // top left horizontal co-ordinate
 	int Bottom; // bottom right vertical co-ordinate
 	int Right; // bottom right horizontal co-ordinate
-	bool havedata; // states if we have captured the screen
+	bool haveData; // states if we have captured the screen
+	UINT height, width;
 
 public:
-	Capture(HWND hSethWnd); // class constructor
+	Capture(UINT hieght, UINT width); // class constructor
 	~Capture(); // class destructor
 
 	void TakePic(int top, int left, int bottom, int right);
