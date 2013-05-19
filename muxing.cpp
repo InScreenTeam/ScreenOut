@@ -309,7 +309,7 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 	}		
 
 	
-	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(10, 10, 10 , 10, 10, 10, 10), NULL);
+	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(0, 10, 100 , 0, 10, 0, 0), NULL);
 	SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
 	
 	uint8_t *input = reinterpret_cast<uint8_t *>(screenBuffer);
@@ -328,7 +328,7 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 		}
 	}	
 
-	Sleep(35);
+	//Sleep(35);
 
 
 }
