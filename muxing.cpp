@@ -1,7 +1,4 @@
-//   /SAFESEH:NO  - Project Options- Linker- command line for release
-
-
-
+// /SAFESEH:NO  - Project Options- Linker- command line for release
 extern "C" 
 {    
 	#include <libavformat\avformat.h>
@@ -12,6 +9,7 @@ extern "C"
 #include <windows.h>
 #include "Capture.h"
 #include <time.h>  
+#include <memory>
 
 #pragma comment(lib, "lib\\avcodec.lib")
 #pragma comment(lib, "lib\\avformat.lib")
@@ -23,10 +21,10 @@ extern "C"
 #define STREAM_FRAME_RATE 10 
 #define STREAM_NB_FRAMES  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
-
+#define WIDTH 1366
+#define HEIGHT 768
 
 static int sws_flags = SWS_BICUBIC;
-static Capture capture(HEIGHT, WIDTH, COLOUR_BIT_COUNT);
 
 /**************************************************************/
 /* audio output */
@@ -107,8 +105,6 @@ static AVStream *add_stream(AVFormatContext *oc, AVCodec **codec,
 
 /**************************************************************/
 /* audio output */
-
-
 static void open_audio(AVFormatContext *oc, AVCodec *codec, AVStream *st)
 {
     AVCodecContext *c;
@@ -141,7 +137,6 @@ static void open_audio(AVFormatContext *oc, AVCodec *codec, AVStream *st)
         exit(1);
     }
 }
-
 /* Prepare a 16 bit dummy audio frame of 'frame_size' samples and
  * 'nb_channels' channels. */
 static void get_audio_frame(int16_t *samples, int frame_size, int nb_channels)
@@ -158,7 +153,6 @@ static void get_audio_frame(int16_t *samples, int frame_size, int nb_channels)
         tincr += tincr2;
     }
 }
-
 static void write_audio_frame(AVFormatContext *oc, AVStream *st)
 {
     AVCodecContext *c;
@@ -197,7 +191,6 @@ static void write_audio_frame(AVFormatContext *oc, AVStream *st)
     }
     avcodec_free_frame(&frame);
 }
-
 static void close_audio(AVFormatContext *oc, AVStream *st)
 {
     avcodec_close(st->codec);
@@ -212,18 +205,32 @@ static AVFrame *frame;
 static AVPicture src_picture, dst_picture, outputAVPicture;
 static int frame_count;
 static LPBYTE screenBuffer; //our screen's buffer
+static Capture *capture;
+static SwsContext* swsContext;
+
 
 //initializtion of screen image buffer and dst_picture
-static bool InitBuffers(unsigned int bufferSize)
+static bool Init(int width, int height , int rgbPlanes)
 {
 	//screenBuffer = (LPBYTE)GlobalAlloc(GMEM_FIXED, bufferSize*16);
-	screenBuffer = (LPBYTE)malloc(bufferSize);
-	avpicture_alloc(&outputAVPicture, STREAM_PIX_FMT, WIDTH, HEIGHT);
+	screenBuffer = new BYTE[height*width*rgbPlanes];
 	if (!screenBuffer) 
 	{
 		return false;
 	}
+	avpicture_alloc(&outputAVPicture, STREAM_PIX_FMT, width, height);
+	swsContext = sws_getContext(width, height, AV_PIX_FMT_RGB32, width, height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
+	capture = new Capture(width, height, rgbPlanes*8);
+	capture->TakePic(0, 0, height, width);
+	capture->SetBitmapInfo();
 	return true;
+}
+
+static void Clean()
+{
+	delete[]  screenBuffer;
+	delete capture;
+	//delete swsContext;
 }
 
 static void open_video(AVFormatContext *oc, AVCodec *codec, AVStream *st)
@@ -270,22 +277,22 @@ static void open_video(AVFormatContext *oc, AVCodec *codec, AVStream *st)
 
 static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int height)
 {
-	capture.TakePic(0, 0, height, width);
+	capture->TakePic(0, 0, height, width);
 	//capture.SetBitmapInfo();
 		
-	if (!GetDIBits(capture.hdcScreen, capture.hbmScreen, 0, capture.pBitmapInfo->bmiHeader.biHeight,
-				   screenBuffer, capture.pBitmapInfo, DIB_RGB_COLORS))
+	if (!GetDIBits(capture->hdcScreen, capture->hbmScreen, 0, capture->pBitmapInfo->bmiHeader.biHeight,
+				   screenBuffer, capture->pBitmapInfo, DIB_RGB_COLORS))
 	{
 			return;
 	}		
 
 	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(0, 10, 100 , 0, 10, 0, 0), NULL);
-	SwsContext* fooContext = sws_getContext(width, height, AV_PIX_FMT_RGB32, width, height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
+	
 	
 	uint8_t *input = reinterpret_cast<uint8_t *>(screenBuffer);
 	
-	int linesize[] = {(int)capture.bitmapWidth, 0,0 ,0 ,0 ,0 ,0 ,0};
-	sws_scale(fooContext, &input, linesize, 0, height, outputAVPicture.data, outputAVPicture.linesize);	
+	int linesize[] = {(int)capture->bitmapWidth, 0,0 ,0 ,0 ,0 ,0 ,0};
+	sws_scale(swsContext, &input, linesize, 0, height, outputAVPicture.data, outputAVPicture.linesize);	
 	
 	int x, y;
 	for (y = 0; y <= height; y++)
@@ -397,9 +404,8 @@ int main(int argc, char **argv)
 	time_t startTime, finishTime;
 	time(&startTime);
 
-	InitBuffers(WIDTH*HEIGHT*RGB_PLANES);
-	capture.TakePic(0, 0, HEIGHT, WIDTH);
-	capture.SetBitmapInfo();
+	Init(1366,768,4);
+
 
     /* Initialize libavcodec, and register all codecs and formats. */
     av_register_all();   
@@ -504,6 +510,7 @@ int main(int argc, char **argv)
     /* free the stream */
     avformat_free_context(oc);	
 	time(&finishTime);
+	Clean();
 	printf ("\n\n\nTotal time: %.f seconds\n", difftime(finishTime,startTime));
     return 0;
 } 

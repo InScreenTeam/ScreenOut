@@ -123,16 +123,12 @@ void Capture::TakePic(int top, int left, int bottom, int right)
 }
 
 
-
-
-
-
 void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
 {
 	BITMAP bitmap; 
-	HANDLE fileHandle; // file handle 
-	BITMAPFILEHEADER bitmapFileHeader; // bitmap file-header 
-	PBITMAPINFOHEADER pBitmapInfoHeader; // bitmap info-header 
+	HANDLE fileHandle;
+	BITMAPFILEHEADER bitmapFileHeader;
+	PBITMAPINFOHEADER pBitmapInfoHeader;
 	LPBYTE lpBits; // memory pointer 
 	DWORD dwTotal; // total count of bytes 
 	DWORD cb; // incremental count of bytes 
@@ -144,11 +140,11 @@ void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
 		return;
 	}
 	
-
 	pBitmapInfoHeader = (PBITMAPINFOHEADER) pBitmapInfo; 
 	lpBits = (LPBYTE) GlobalAlloc(GMEM_FIXED, pBitmapInfoHeader->biSizeImage);
 
-	if (!lpBits) {
+	if (!lpBits)
+	{
 		return;
 	}
 
@@ -204,7 +200,6 @@ void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
 		return;
 	}
 	
-	// Close the .BMP file. 
 	if (!CloseHandle(fileHandle)){
 		//AfxMessageBox("Could not close file");
 		return;

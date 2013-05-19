@@ -10,8 +10,7 @@
 #include <string>
 #include <iostream>
 
-#define HEIGHT 768	
-#define WIDTH 1366
+
 #define RGB_PLANES 4
 #define COLOUR_BIT_COUNT 32
 #define MIN_BIT_COUNT 24
@@ -31,7 +30,7 @@ protected:
 	DWORD height, width;
 	WORD colourBitCount;
 public:
-	Capture(DWORD height, DWORD width, WORD colourBitCount);
+	Capture(DWORD width, DWORD height, WORD colourBitCount);
 	~Capture();
 
 	void TakePic(int top, int left, int bottom, int right);
