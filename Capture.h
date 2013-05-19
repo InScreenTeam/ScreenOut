@@ -13,6 +13,8 @@
 #define HEIGHT 768	
 #define WIDTH 1366
 #define RGB_PLANES 4
+#define COLOUR_BIT_COUNT 32
+#define MIN_BIT_COUNT 24
 
 using namespace std;
 
@@ -20,31 +22,24 @@ class Capture
 {
 public:
 	HBITMAP hbmScreen;
-	HDC hdcScreen; // bitmap object
-protected:
-	HWND hWnd; //
-	 // handle to device driver
-	HDC hdcCompatible; // compatible dc to device driver handle
-	
-	int Top; // top left vertical co-ordinate
-	int Left; // top left horizontal co-ordinate
-	int Bottom; // bottom right vertical co-ordinate
-	int Right; // bottom right horizontal co-ordinate
-	bool haveData; // states if we have captured the screen
-	UINT height, width;
+	HDC hdcScreen;
+	PBITMAPINFO pBitmapInfo;
+	DWORD bitmapWidth;
 
+protected:
+	HDC hdcCompatible; 
+	DWORD height, width;
+	WORD colourBitCount;
 public:
-	Capture(UINT hieght, UINT width); // class constructor
-	~Capture(); // class destructor
+	Capture(DWORD height, DWORD width, WORD colourBitCount);
+	~Capture();
 
 	void TakePic(int top, int left, int bottom, int right);
-	void CopyTo(HWND hwnd);
-	void WriteBMP(const HBITMAP bitmap, LPTSTR filename, HDC hDC);
-	void ScreenShot(wstring fileName);
-private:
-	HWND GetConsoleHwnd();
-
-
-
+	void WriteBMP(LPTSTR filename, HBITMAP bitmap, HDC hDC);
+	bool SetBitmapInfo();
+	
+protected:
+	void SetBitmapInfo(LONG width, LONG height, WORD planes,
+							  WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth);
 };
 #endif

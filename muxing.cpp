@@ -26,7 +26,7 @@ extern "C"
 
 
 static int sws_flags = SWS_BICUBIC;
-static Capture capture = Capture(HEIGHT, WIDTH);
+static Capture capture(HEIGHT, WIDTH, COLOUR_BIT_COUNT);
 
 /**************************************************************/
 /* audio output */
@@ -270,52 +270,22 @@ static void open_video(AVFormatContext *oc, AVCodec *codec, AVStream *st)
 
 static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int height)
 {
-	BITMAP bitmap;
-	PBITMAPINFO pBitmapInfo; 
-	WORD cClrBits; 
-	
-	capture.TakePic(0,0, HEIGHT, WIDTH);
-	GetObject(capture.hbmScreen, sizeof(BITMAP), (LPVOID)&bitmap);	
-	int in_width = bitmap.bmWidth;
-	int in_height = bitmap.bmHeight;
-	int out_width = bitmap.bmWidth;
-	int out_height =  bitmap.bmHeight;
-	cClrBits = (WORD)(bitmap.bmPlanes * bitmap.bmBitsPixel); 
-	
-	// Allocate memory for the BITMAPINFO structure.
-	//if (cClrBits != 24) 
-	//	pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits)); 
-	//else 
-		pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER)); 
-
-// Initialize the fields in the BITMAPINFO structure. 
-	pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER); 
-	pBitmapInfo->bmiHeader.biWidth = bitmap.bmWidth; 
-	pBitmapInfo->bmiHeader.biHeight = bitmap.bmHeight; 
-	pBitmapInfo->bmiHeader.biPlanes = bitmap.bmPlanes; 
-	pBitmapInfo->bmiHeader.biBitCount = bitmap.bmBitsPixel;
-	 
-	if (cClrBits < 24) 
-		pBitmapInfo->bmiHeader.biClrUsed = (1<<cClrBits); 
-//If the bitmap is not compressed, set the BI_RGB flag. 
-	pBitmapInfo->bmiHeader.biCompression = BI_RGB; 
-
-	pBitmapInfo->bmiHeader.biClrImportant = 0; 
-	
-	if (!GetDIBits(capture.hdcScreen, HBITMAP(capture.hbmScreen), 0, (WORD)in_height, screenBuffer, pBitmapInfo, 
-		DIB_RGB_COLORS))
+	capture.TakePic(0, 0, height, width);
+	//capture.SetBitmapInfo();
+		
+	if (!GetDIBits(capture.hdcScreen, capture.hbmScreen, 0, capture.pBitmapInfo->bmiHeader.biHeight,
+				   screenBuffer, capture.pBitmapInfo, DIB_RGB_COLORS))
 	{
 			return;
 	}		
 
-	
 	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(0, 10, 100 , 0, 10, 0, 0), NULL);
-	SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
+	SwsContext* fooContext = sws_getContext(width, height, AV_PIX_FMT_RGB32, width, height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
 	
 	uint8_t *input = reinterpret_cast<uint8_t *>(screenBuffer);
 	
-	int linesize[] = {(int)bitmap.bmWidthBytes, 0,0 ,0 ,0 ,0 ,0 ,0};
-	sws_scale(fooContext, &input, linesize, 0, out_height, outputAVPicture.data, outputAVPicture.linesize);	
+	int linesize[] = {(int)capture.bitmapWidth, 0,0 ,0 ,0 ,0 ,0 ,0};
+	sws_scale(fooContext, &input, linesize, 0, height, outputAVPicture.data, outputAVPicture.linesize);	
 	
 	int x, y;
 	for (y = 0; y <= height; y++)
@@ -327,10 +297,6 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 			pict->data[2][y * pict->linesize[2] + x] =  outputAVPicture.data[2][(height/2 - y) * outputAVPicture.linesize[2] + x];
 		}
 	}	
-
-	//Sleep(35);
-
-
 }
 
 
@@ -420,7 +386,7 @@ static void close_video(AVFormatContext *oc, AVStream *st)
 
 int main(int argc, char **argv)
 {
-    const char *filename;
+	  const char *filename;
     AVOutputFormat *fmt;
     AVFormatContext *oc;
     AVStream *audio_st, *video_st;
@@ -432,6 +398,9 @@ int main(int argc, char **argv)
 	time(&startTime);
 
 	InitBuffers(WIDTH*HEIGHT*RGB_PLANES);
+	capture.TakePic(0, 0, HEIGHT, WIDTH);
+	capture.SetBitmapInfo();
+
     /* Initialize libavcodec, and register all codecs and formats. */
     av_register_all();   
 

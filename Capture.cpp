@@ -11,124 +11,72 @@
 
 using namespace std;
 
-// class constructor
-Capture::Capture(UINT hieght, UINT width)
+// We need to create a CompatibleDC with 'hdcScreen' because CreateCompatibleBitmap() only accepts this type of handle.
+// bitsCount - bits for pixel in image
+Capture::Capture(DWORD height, DWORD width, WORD colourBitCount)
 {
-	hWnd = GetConsoleWindow();
-	haveData = false; // no image stored at start.
-	       //  wrong = create a device-context, this will be the source to copy from.
-	hdcScreen = CreateDC(L"DISPLAY", // pointer to string specifying driver name 
-						 NULL,	     // pointer to string specifying device name 
-						 NULL,  	 // do not use; set to NULL 
-						 NULL);		 // pointer to optional printer data 
-		// we need to create a CompatibleDC with 'hdcScreen' because
-// CreateCompatibleBitmap() only accepts this type of handle.
-	hdcCompatible = CreateCompatibleDC(hdcScreen); 
-// now we define the handle to the compatible bitmap
-// and we point it to 'hdcScreen' where it is saved.
-		
-}
+	if ((height == 0 ) || (width == 0)  || (colourBitCount < MIN_BIT_COUNT))
+	throw(invalid_argument("Invalid arguments"));
 
-Capture::~Capture()
-{
-	if (hbmScreen > 0)
-		DeleteObject(hbmScreen); // delete bitmap object
-	if (hdcScreen>0) 
-		DeleteDC(hdcScreen); // delete this device-context
-	if (hdcCompatible > 0)
-		DeleteDC(hdcCompatible); // delete this one too
-}
+	this->height = height;
+	this->width = width;
+	colourBitCount > 24 ? this->colourBitCount = 32 : this->colourBitCount = 24;
 
-HWND Capture::GetConsoleHwnd(void)
-{
-	#define MY_BUFSIZE 1024 // Размер буфера для заголовка консольного окна.
-	HWND hwndFound;         // Это то, что будет возвращено.
-	char pszNewWindowTitle[MY_BUFSIZE]; // Уникальный заголовок окна.
-	char pszOldWindowTitle[MY_BUFSIZE]; // Изначальный заголовок окна.
-	GetConsoleTitle((LPWSTR)pszOldWindowTitle, MY_BUFSIZE);
-	wsprintf((LPWSTR)pszNewWindowTitle, L"%d/%d",
-		GetTickCount(),
-		GetCurrentProcessId());
-	SetConsoleTitle((LPWSTR)pszNewWindowTitle);
-	Sleep(40);
-	hwndFound=FindWindow(NULL, (LPCWSTR)pszNewWindowTitle);
-	SetConsoleTitle((LPCWSTR)pszOldWindowTitle);
-	return(hwndFound);
-}
- 
-// copies the stored image to another application handle
-void Capture::CopyTo(HWND hwnd)
-{
-	if (!haveData) return; // cannot proceed, we have nothing to copy!
-	HDC screendata =  GetDC(hwnd); // the area to copy to...
-	// make the transfer using stored data
-	BitBlt(	screendata,		// handle to destination device context 
-		Left,			// x-coordinate of destination rectangle's upper-left corner
-		Top,			// y-coordinate of destination rectangle's upper-left corner
-		Right,			// width of destination rectangle 
-		Bottom,			// height of destination rectangle 
-		hdcCompatible,	// handle to source device context 
-		Left,			// x-coordinate of source rectangle's upper-left corner  
-		Top,			// y-coordinate of source rectangle's upper-left corner
-		SRCCOPY 		// raster operation code 
-		);
-	ReleaseDC(hwnd, screendata); // release device-context
-}
-
-void Capture::TakePic(int top, int left, int bottom, int right)
-{
-	// initialize capture settings
-	Top = top;
-	Left = left;
-	Bottom = bottom; 
-	Right = right; // save co-ordinates
-
-	hbmScreen =  CreateCompatibleBitmap(
-		hdcScreen,	// handle to device context 
-		right-left,		// width of bitmap, in pixels  
-		bottom);	// height of bitmap, in pixels  
-	// The SelectObject() function selects an object into the specified device context.
-	// The new object replaces the previous object of the same type.
-	SelectObject(hdcCompatible, hbmScreen); 
-
-	// now we copy data from the source to our destination 'hdcCompatible'
-	// which, is actually our handle to the bitmap object we created.
-	BitBlt(	hdcCompatible,	// handle to destination device context 
-		left,			// x-coordinate of destination rectangle's upper-left corner
-		top,			// y-coordinate of destination rectangle's upper-left corner
-		right,			// width of destination rectangle 
-		bottom,			// height of destination rectangle 
-		hdcScreen,		// handle to source device context 
-		left,			// x-coordinate of source rectangle's upper-left corner  
-		top,			// y-coordinate of source rectangle's upper-left corner
-		SRCCOPY 		// raster operation code 
-		);
-
-	haveData = true; 
-}
-void Capture::WriteBMP(const HBITMAP hBitmap, LPTSTR filename, HDC hDC)
-{
-	BITMAP bitmap; 
-	PBITMAPINFO pBitmapInfo; 
-	WORD cClrBits; 
-	HANDLE fileHandle; // file handle 
-	BITMAPFILEHEADER bitmapFileHeader; // bitmap file-header 
-	PBITMAPINFOHEADER pBitmapInfoHeader; // bitmap info-header 
-	LPBYTE lpBits; // memory pointer 
-	DWORD dwTotal; // total count of bytes 
-	DWORD cb; // incremental count of bytes 
-	BYTE *hp; // byte pointer 
-	DWORD dwTmp; 
-
-	// create the bitmapinfo header information
-
-	if (!GetObject(hBitmap, sizeof(BITMAP), (LPVOID)&bitmap)){
-		//AfxMessageBox("Could not retrieve bitmap info");
+	hdcScreen = CreateDC(L"DISPLAY", // driver name 
+						 NULL,	     // device name 
+						 NULL,  	 // do not use
+						 NULL);		 // printer data 
+	hdcCompatible = CreateCompatibleDC(hdcScreen);
+	
+	if (colourBitCount != 24) 
+	{
+		pBitmapInfo = (PBITMAPINFO)LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1 << colourBitCount));
+		pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1 << colourBitCount);  
+	}
+	else
+	{ 
+		pBitmapInfo = (PBITMAPINFO)LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER));
+		pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	}
+	if (!pBitmapInfo)
+	{
+		//Error
 		return;
 	}
 	
-	// Convert the color format to a count of bits. 
-	cClrBits = (WORD)(bitmap.bmPlanes * bitmap.bmBitsPixel); 
+}
+Capture::~Capture()
+{
+	if (hbmScreen > 0)
+		DeleteObject(hbmScreen);
+	if (hdcScreen>0) 
+		DeleteDC(hdcScreen); 
+	if (hdcCompatible > 0)
+		DeleteDC(hdcCompatible); 
+}
+
+//using bitmap information for discrabe pBitmapInfo
+bool Capture::SetBitmapInfo()
+{
+	
+	if (hbmScreen > 0)
+	{
+		BITMAP bitmap;
+		GetObject(hbmScreen, sizeof(BITMAP), (LPVOID)&bitmap); 
+		SetBitmapInfo(bitmap.bmWidth, bitmap.bmHeight, bitmap.bmPlanes,
+				  bitmap.bmBitsPixel, BI_RGB, 0, bitmap.bmWidthBytes); 
+	}
+	else
+	{
+		return false;
+	}
+	return true;
+}
+
+void Capture::SetBitmapInfo(LONG width, LONG height, WORD planes,
+				   WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth)
+{
+	WORD cClrBits = (WORD)(planes * bitCount); 
 	if (cClrBits == 1) 
 		cClrBits = 1; 
 	else if (cClrBits <= 4) 
@@ -140,45 +88,73 @@ void Capture::WriteBMP(const HBITMAP hBitmap, LPTSTR filename, HDC hDC)
 	else if (cClrBits <= 24) 
 		cClrBits = 24; 
 	else cClrBits = 32; 
+	if (colourBitCount != cClrBits)
+		throw(invalid_argument("invalid colour's bit count"));
 
-	// Allocate memory for the BITMAPINFO structure.
-	if (cClrBits != 24) 
-		pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, 
-		sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits)); 
-	else 
-		pBitmapInfo = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER)); 
-
-	// Initialize the fields in the BITMAPINFO structure. 
-	pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER); 
-	pBitmapInfo->bmiHeader.biWidth = bitmap.bmWidth; 
-	pBitmapInfo->bmiHeader.biHeight = bitmap.bmHeight; 
-	pBitmapInfo->bmiHeader.biPlanes = bitmap.bmPlanes; 
-	pBitmapInfo->bmiHeader.biBitCount = bitmap.bmBitsPixel; 
-	if (cClrBits < 24) 
-		pBitmapInfo->bmiHeader.biClrUsed = (1<<cClrBits); 
-
-	// If the bitmap is not compressed, set the BI_RGB flag. 
-	pBitmapInfo->bmiHeader.biCompression = BI_RGB; 
-
-	// Compute the number of bytes in the array of color 
-	// indices and store the result in biSizeImage. 
+	pBitmapInfo->bmiHeader.biWidth = width; 
+	pBitmapInfo->bmiHeader.biHeight = height; 
+	pBitmapInfo->bmiHeader.biPlanes = planes; 
+	pBitmapInfo->bmiHeader.biBitCount = bitCount;
+	pBitmapInfo->bmiHeader.biCompression = compression; 
+	pBitmapInfo->bmiHeader.biClrImportant = clrImportant;
 	pBitmapInfo->bmiHeader.biSizeImage = (pBitmapInfo->bmiHeader.biWidth + 7) /8 * pBitmapInfo->bmiHeader.biHeight * cClrBits; 
-	// Set biClrImportant to 0, indicating that all of the 
-	// device colors are important. 
-	pBitmapInfo->bmiHeader.biClrImportant = 0; 
+	pBitmapInfo->bmiHeader.biClrUsed = (1 << cClrBits);
+	this->bitmapWidth = bitmapWidth;
+}
 
-	// now open file and save the data
+void Capture::TakePic(int top, int left, int bottom, int right)
+{
+	hbmScreen =  CreateCompatibleBitmap(
+		hdcScreen,	
+		right-left, // width of bitmap, in pixels  
+		bottom);	// height of bitmap, in pixels  
+	SelectObject(hdcCompatible, hbmScreen); 
+
+	BitBlt(	hdcCompatible,	
+		left,			// x-coordinate of destination rectangle's upper-left corner
+		top,			// y-coordinate of destination rectangle's upper-left corner
+		right,			// width of destination rectangle 
+		bottom,			// height of destination rectangle 
+		hdcScreen,		// handle to source device context 
+		left,			// x-coordinate of source rectangle's upper-left corner  
+		top,			// y-coordinate of source rectangle's upper-left corner
+		SRCCOPY 		// raster operation code 
+		);
+}
+
+
+
+
+
+
+void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
+{
+	BITMAP bitmap; 
+	HANDLE fileHandle; // file handle 
+	BITMAPFILEHEADER bitmapFileHeader; // bitmap file-header 
+	PBITMAPINFOHEADER pBitmapInfoHeader; // bitmap info-header 
+	LPBYTE lpBits; // memory pointer 
+	DWORD dwTotal; // total count of bytes 
+	DWORD cb; // incremental count of bytes 
+	BYTE *hp; // byte pointer 
+	DWORD dwTmp; 
+
+	if (!GetObject(hBitmap, sizeof(BITMAP), (LPVOID)&bitmap)){
+		//AfxMessageBox("Could not retrieve bitmap info");
+		return;
+	}
+	
+
 	pBitmapInfoHeader = (PBITMAPINFOHEADER) pBitmapInfo; 
 	lpBits = (LPBYTE) GlobalAlloc(GMEM_FIXED, pBitmapInfoHeader->biSizeImage);
 
 	if (!lpBits) {
-		//AfxMessageBox("writeBMP::Could not allocate memory");
 		return;
 	}
 
 	// Retrieve the color table (RGBQUAD array) and the bits 
-	if (!GetDIBits(hDC, HBITMAP(hBitmap), 0, (WORD) pBitmapInfoHeader->biHeight, lpBits, pBitmapInfo, 
-		DIB_RGB_COLORS)) {
+	if (!GetDIBits(hDC, hBitmap, 0, (WORD)pBitmapInfoHeader->biHeight, lpBits, pBitmapInfo, DIB_RGB_COLORS))
+	{
 			//AfxMessageBox("writeBMP::GetDIB error");
 			return;
 	}
@@ -238,11 +214,3 @@ void Capture::WriteBMP(const HBITMAP hBitmap, LPTSTR filename, HDC hDC)
 	GlobalFree((HGLOBAL)lpBits);
 }
 
-void Capture::ScreenShot(wstring fileName)
-{
-	TakePic(0,0,HEIGHT,WIDTH); 
-	wstring outFile = L"D:\\Test\\" + fileName + L".bitmap"; //
-	
-	WriteBMP(hbmScreen, (LPTSTR)outFile.c_str(), hdcScreen);
-}
- 
