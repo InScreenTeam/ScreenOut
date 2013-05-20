@@ -88,10 +88,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Capture.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Muxer.cpp" />
     <ClCompile Include="muxing.cpp" />
+    <ClCompile Include="Recorder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Capture.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="Muxer.h" />
+    <ClInclude Include="Recorder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

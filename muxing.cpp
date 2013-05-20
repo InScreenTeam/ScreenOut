@@ -8,8 +8,11 @@ extern "C"
 
 #include <windows.h>
 #include "Capture.h"
+#include "Logger.h"
 #include <time.h>  
 #include <memory>
+
+using namespace ScreenOut;
 
 #pragma comment(lib, "lib\\avcodec.lib")
 #pragma comment(lib, "lib\\avformat.lib")
@@ -17,12 +20,12 @@ extern "C"
 #pragma comment(lib, "lib\\avutil.lib")
 
 
-#define STREAM_DURATION   30.0
+#define STREAM_DURATION   10.0
 #define STREAM_FRAME_RATE 10 
 #define STREAM_NB_FRAMES  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
-#define WIDTH 1366
-#define HEIGHT 768
+#define WIDTH 1024
+#define HEIGHT 600
 
 static int sws_flags = SWS_BICUBIC;
 
@@ -512,5 +515,8 @@ int main(int argc, char **argv)
 	time(&finishTime);
 	Clean();
 	printf ("\n\n\nTotal time: %.f seconds\n", difftime(finishTime,startTime));
+	Logger logger("log");
+	logger << Logger::Level::LOG_INFO << "Video length:"
+		<< STREAM_DURATION << "Time spent:" << difftime(finishTime,startTime);
     return 0;
 } 
