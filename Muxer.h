@@ -1,14 +1,15 @@
 #pragma once
-
+namespace ScreenOut
+{
+/*
 extern "C" 
 {    
 	#include <libavformat\avformat.h>
 	#include <libavutil\mathematics.h>
 	#include <libswscale\swscale.h>
-}
+}*/
 
-namespace ScreenOut
-{
+
 	class Muxer
 	{
 	public:

@@ -24,8 +24,8 @@ using namespace ScreenOut;
 #define STREAM_FRAME_RATE 10 
 #define STREAM_NB_FRAMES  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
-#define WIDTH 1024
-#define HEIGHT 600
+#define WIDTH 1376 //for data aligin it must be (WIDTH * 4)%32 =0, but video image is not so good as with normal resolution
+#define HEIGHT 768
 
 static int sws_flags = SWS_BICUBIC;
 
@@ -205,35 +205,36 @@ static void close_audio(AVFormatContext *oc, AVStream *st)
 /* video output */
 
 static AVFrame *frame;
-static AVPicture src_picture, dst_picture, outputAVPicture;
+static AVPicture src_picture, dst_picture;
 static int frame_count;
-static LPBYTE screenBuffer; //our screen's buffer
+static LPVOID screenBuffer; //our screen's buffer
 static Capture *capture;
 static SwsContext* swsContext;
+static int linesize[8];
 
-
-//initializtion of screen image buffer and dst_picture
+//initialization of screen image buffer and dst_picture
 static bool Init(int width, int height , int rgbPlanes)
 {
 	//screenBuffer = (LPBYTE)GlobalAlloc(GMEM_FIXED, bufferSize*16);
-	screenBuffer = new BYTE[height*width*rgbPlanes];
+	screenBuffer = malloc(height*width*rgbPlanes);
 	if (!screenBuffer) 
 	{
 		return false;
 	}
-	avpicture_alloc(&outputAVPicture, STREAM_PIX_FMT, width, height);
+	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(0, 10, 100 , 0, 10, 0, 0), NULL);
 	swsContext = sws_getContext(width, height, AV_PIX_FMT_RGB32, width, height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);
 	capture = new Capture(width, height, rgbPlanes*8);
-	capture->TakePic(0, 0, height, width);
+	capture->TakePic(0, 0, height, width, NULL);
 	capture->SetBitmapInfo();
+	linesize[0] = capture->bitmapWidth;
+
 	return true;
 }
 
 static void Clean()
 {
-	delete[]  screenBuffer;
+	free(screenBuffer);
 	delete capture;
-	//delete swsContext;
 }
 
 static void open_video(AVFormatContext *oc, AVCodec *codec, AVStream *st)
@@ -280,33 +281,10 @@ static void open_video(AVFormatContext *oc, AVCodec *codec, AVStream *st)
 
 static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int height)
 {
-	capture->TakePic(0, 0, height, width);
-	//capture.SetBitmapInfo();
-		
-	if (!GetDIBits(capture->hdcScreen, capture->hbmScreen, 0, capture->pBitmapInfo->bmiHeader.biHeight,
-				   screenBuffer, capture->pBitmapInfo, DIB_RGB_COLORS))
-	{
-			return;
-	}		
-
-	//SwsContext* fooContext = sws_getContext(in_width, in_height, AV_PIX_FMT_RGB32, out_width, out_height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL,  sws_getDefaultFilter 	(0, 10, 100 , 0, 10, 0, 0), NULL);
-	
-	
+	capture->TakePic(0, 0, height, width, screenBuffer);
 	uint8_t *input = reinterpret_cast<uint8_t *>(screenBuffer);
-	
-	int linesize[] = {(int)capture->bitmapWidth, 0,0 ,0 ,0 ,0 ,0 ,0};
-	sws_scale(swsContext, &input, linesize, 0, height, outputAVPicture.data, outputAVPicture.linesize);	
-	
-	int x, y;
-	for (y = 0; y <= height; y++)
-		for (x = 0; x <= width; x++)
-			pict->data[0][y * pict->linesize[0] + x] = outputAVPicture.data[0][(height - y) * outputAVPicture.linesize[0] + x];    
-	for (y = 0; y <= height / 2; y++) {
-		for (x = 0; x <= width / 2; x++) {
-			pict->data[1][y * pict->linesize[1] + x] =  outputAVPicture.data[1][(height/2 - y) * outputAVPicture.linesize[1] + x];
-			pict->data[2][y * pict->linesize[2] + x] =  outputAVPicture.data[2][(height/2 - y) * outputAVPicture.linesize[2] + x];
-		}
-	}	
+	sws_scale(swsContext, &input, linesize, 0, height, pict->data, pict->linesize);	
+
 }
 
 
@@ -407,7 +385,7 @@ int main(int argc, char **argv)
 	time_t startTime, finishTime;
 	time(&startTime);
 
-	Init(1366,768,4);
+	Init(WIDTH, HEIGHT, 4);
 
 
     /* Initialize libavcodec, and register all codecs and formats. */

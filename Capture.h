@@ -20,20 +20,21 @@ using namespace std;
 class Capture
 {
 public:
-	HBITMAP hbmScreen;
-	HDC hdcScreen;
-	PBITMAPINFO pBitmapInfo;
 	DWORD bitmapWidth;
 
 protected:
+	HDC hdcScreen;
 	HDC hdcCompatible; 
+	HBITMAP hbmScreen;
+	PBITMAPINFO pBitmapInfo;
 	DWORD height, width;
 	WORD colourBitCount;
 public:
 	Capture(DWORD width, DWORD height, WORD colourBitCount);
 	~Capture();
 
-	void TakePic(int top, int left, int bottom, int right);
+	void TakePic(int top, int left, int bottom, int right, LPVOID buffer);
+	void TakePic(int bottom, int right, LPVOID buffer);
 	void WriteBMP(LPTSTR filename, HBITMAP bitmap, HDC hDC);
 	bool SetBitmapInfo();
 	

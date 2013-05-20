@@ -13,7 +13,7 @@ using namespace std;
 
 // We need to create a CompatibleDC with 'hdcScreen' because CreateCompatibleBitmap() only accepts this type of handle.
 // bitsCount - bits for pixel in image
-Capture::Capture(DWORD height, DWORD width, WORD colourBitCount)
+Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 {
 	if ((height == 0 ) || (width == 0)  || (colourBitCount < MIN_BIT_COUNT))
 	throw(invalid_argument("Invalid arguments"));
@@ -22,11 +22,11 @@ Capture::Capture(DWORD height, DWORD width, WORD colourBitCount)
 	this->width = width;
 	colourBitCount > 24 ? this->colourBitCount = 32 : this->colourBitCount = 24;
 
-	hdcScreen = CreateDC(L"DISPLAY", // driver name 
-						 NULL,	     // device name 
-						 NULL,  	 // do not use
-						 NULL);		 // printer data 
+	hdcScreen = GetDC(NULL);
 	hdcCompatible = CreateCompatibleDC(hdcScreen);
+	SetMapMode(hdcScreen, MM_ANISOTROPIC);
+	ScaleViewportExtEx(hdcScreen, 1, 1, -1, 1, NULL);
+	SetViewportOrgEx(hdcScreen, 0, height, NULL);
 	
 	if (colourBitCount != 24) 
 	{
@@ -47,18 +47,14 @@ Capture::Capture(DWORD height, DWORD width, WORD colourBitCount)
 }
 Capture::~Capture()
 {
-	if (hbmScreen > 0)
 		DeleteObject(hbmScreen);
-	if (hdcScreen>0) 
 		DeleteDC(hdcScreen); 
-	if (hdcCompatible > 0)
 		DeleteDC(hdcCompatible); 
 }
 
-//using bitmap information for discrabe pBitmapInfo
+//using bitmap information for definition pBitmapInfo
 bool Capture::SetBitmapInfo()
 {
-	
 	if (hbmScreen > 0)
 	{
 		BITMAP bitmap;
@@ -102,26 +98,29 @@ void Capture::SetBitmapInfo(LONG width, LONG height, WORD planes,
 	this->bitmapWidth = bitmapWidth;
 }
 
-void Capture::TakePic(int top, int left, int bottom, int right)
+void Capture::TakePic(int top, int left, int bottom, int right, LPVOID buffer)
 {
-	hbmScreen =  CreateCompatibleBitmap(
-		hdcScreen,	
-		right-left, // width of bitmap, in pixels  
-		bottom);	// height of bitmap, in pixels  
+	hbmScreen =  CreateCompatibleBitmap(hdcScreen,	right-left, bottom-top);
 	SelectObject(hdcCompatible, hbmScreen); 
-
 	BitBlt(	hdcCompatible,	
 		left,			// x-coordinate of destination rectangle's upper-left corner
 		top,			// y-coordinate of destination rectangle's upper-left corner
-		right,			// width of destination rectangle 
-		bottom,			// height of destination rectangle 
+		right-left,		// width of destination rectangle 
+		bottom-left,	// height of destination rectangle 
 		hdcScreen,		// handle to source device context 
 		left,			// x-coordinate of source rectangle's upper-left corner  
 		top,			// y-coordinate of source rectangle's upper-left corner
-		SRCCOPY 		// raster operation code 
-		);
+		SRCCOPY);		// raster operation code
+	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
 }
 
+void Capture::TakePic( int bottom, int right, LPVOID buffer )
+{
+	hbmScreen = CreateCompatibleBitmap(hdcScreen, right, bottom);
+	SelectObject(hdcCompatible, hbmScreen); 
+	BitBlt(hdcCompatible, 0, 0, right, bottom, hdcScreen, 0, 0, SRCCOPY);
+	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
+}
 
 void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
 {

@@ -4,9 +4,9 @@
 
 extern "C"
 {    
-	#include <libavformat\avformat.h>
+	/*#include <libavformat\avformat.h>
 	#include <libavutil\mathematics.h>
-	#include <libswscale\swscale.h>
+	#include <libswscale\swscale.h>*/
 }
 
 namespace ScreenOut
@@ -21,7 +21,7 @@ namespace ScreenOut
 	private:
 		void ConvertBitmap();
 	private:
-		std::queue<AVPicture> buffer;		
+	/*	std::queue<AVPicture> buffer;		*/
 	};
 }
 
