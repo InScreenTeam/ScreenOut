@@ -36,8 +36,7 @@ public:
 	void TakePic(int top, int left, int bottom, int right, LPVOID buffer);
 	void TakePic(int bottom, int right, LPVOID buffer);
 	void WriteBMP(LPTSTR filename, HBITMAP bitmap, HDC hDC);
-	bool SetBitmapInfo();
-	
+	bool SetBitmapInfo();	
 protected:
 	void SetBitmapInfo(LONG width, LONG height, WORD planes,
 							  WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth);

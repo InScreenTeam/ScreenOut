@@ -19,9 +19,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="muxing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Logging</Filter>
     </ClCompile>
@@ -29,9 +26,12 @@
       <Filter>Capture</Filter>
     </ClCompile>
     <ClCompile Include="Recorder.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Recorder</Filter>
     </ClCompile>
     <ClCompile Include="Muxer.cpp">
+      <Filter>Muxing</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,7 +42,11 @@
     <ClInclude Include="Capture.h">
       <Filter>Capture</Filter>
     </ClInclude>
-    <ClInclude Include="Recorder.h" />
-    <ClInclude Include="Muxer.h" />
+    <ClInclude Include="Muxer.h">
+      <Filter>Muxing</Filter>
+    </ClInclude>
+    <ClInclude Include="Recorder.h">
+      <Filter>Recorder</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

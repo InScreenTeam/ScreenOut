@@ -1,28 +1,50 @@
 #pragma once
-namespace ScreenOut
-{
-/*
 extern "C" 
 {    
 	#include <libavformat\avformat.h>
 	#include <libavutil\mathematics.h>
 	#include <libswscale\swscale.h>
-}*/
+}
+
+#include "Logger.h"
+
+namespace ScreenOut
+{
 
 
 	class Muxer
 	{
 	public:
-		Muxer(void);
+		Muxer(int width, int height);
 		void Initialize();
+		void WriteVideoFrame(AVPicture* buffer);
+		void WriteAudioFrame();
+		double CurrentTimeStamp();
+		void Flush();
+		void Reset();
 		~Muxer(void);
 	private:
 		void OpenVideo();
 		void OpenAudio();
-		void AddStream();
-		void WriteVideoFrame();
-		void WriteAudioFrame();
+		AVStream* AddStream(AVCodec **codec, enum AVCodecID codec_id);		
 		void CloseVideo();
 		void CloseAudio();
+		
+
+	private:
+		Logger logger;
+
+		int width;
+		int height;
+
+		AVOutputFormat* format;
+		AVFormatContext* formatContext;
+		AVStream* audioStream; 
+		AVStream* videoStream;
+		AVCodec* audioCodec;
+		AVCodec* videoCodec;		
+		AVFrame* frame;
+		double audioTimestamp; 
+		double videoTimestamp;
 	};
 }

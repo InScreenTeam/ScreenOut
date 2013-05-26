@@ -24,8 +24,8 @@ using namespace ScreenOut;
 #define STREAM_FRAME_RATE 10 
 #define STREAM_NB_FRAMES  ((int)(STREAM_DURATION * STREAM_FRAME_RATE))
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
-#define WIDTH 1376 //for data aligin it must be (WIDTH * 4)%32 =0, but video image is not so good as with normal resolution
-#define HEIGHT 768
+#define WIDTH 1024//1376 //for data aligin it must be (WIDTH * 4)%32 =0, but video image is not so good as with normal resolution
+#define HEIGHT 600//768
 
 static int sws_flags = SWS_BICUBIC;
 
@@ -284,7 +284,6 @@ static void fill_yuv_image(AVPicture *pict, int frame_index, int width, int heig
 	capture->TakePic(0, 0, height, width, screenBuffer);
 	uint8_t *input = reinterpret_cast<uint8_t *>(screenBuffer);
 	sws_scale(swsContext, &input, linesize, 0, height, pict->data, pict->linesize);	
-
 }
 
 
@@ -493,7 +492,7 @@ int main(int argc, char **argv)
 	time(&finishTime);
 	Clean();
 	printf ("\n\n\nTotal time: %.f seconds\n", difftime(finishTime,startTime));
-	Logger logger("log");
+	Logger logger("muxer.log");
 	logger << Logger::Level::LOG_INFO << "Video length:"
 		<< STREAM_DURATION << "Time spent:" << difftime(finishTime,startTime);
     return 0;
