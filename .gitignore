@@ -37,3 +37,7 @@ $tf*/
 *.h264
 *.vsp
 *.psess
+*.h263
+*.wav
+*.ipch
+/ipch
