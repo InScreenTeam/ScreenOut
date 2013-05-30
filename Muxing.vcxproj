@@ -101,6 +101,11 @@
     <ClInclude Include="Muxer.h" />
     <ClInclude Include="Recorder.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="SoundLib\SoundLib.vcxproj">
+      <Project>{90b78c86-d37e-45f6-9bf6-88ddff446aa6}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
