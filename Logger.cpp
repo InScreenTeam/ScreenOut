@@ -1,5 +1,6 @@
 #include "Logger.h"
 #include <ctime>
+#include <boost\chrono.hpp>
 
 namespace ScreenOut
 {
@@ -60,9 +61,10 @@ namespace ScreenOut
 	}
 
 	void Logger::LogTime()
-	{
+	{		
 		time_t currentTime = time(0);
-		struct tm* localTime = localtime(&currentTime);
+		struct tm* localTime = new struct tm; 
+		localtime_s(localTime, &currentTime);
 		Outfile << localTime->tm_mday << "/"
 			<< localTime->tm_mon + 1 << "/"
 			<< localTime->tm_year + 1900 <<" "

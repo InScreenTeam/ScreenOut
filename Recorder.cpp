@@ -8,9 +8,8 @@
 #pragma comment(lib, "lib\\avutil.lib")
 
 #define RGB_PLANES 4
-#define FPS 10
-#define CORRECTION 0.5
-#define CAPTURE_DELAY 1000 / FPS * CORRECTION
+#define CORRECTION 0.4
+#define CAPTURE_DELAY 1000 / FPS
 
 using namespace std;
 using namespace boost;
@@ -20,13 +19,15 @@ namespace ScreenOut
 	Recorder::Recorder(void)		
 		: ioService(),
 		logger("recorder.log"),
-		captureTimer(ioService, posix_time::milliseconds(CAPTURE_DELAY))		
+		captureDelay(CAPTURE_DELAY),
+		captureTimer(ioService, posix_time::milliseconds(captureDelay))		
 	{		
 		buffer = new queue<AVPicture*>();
 		GetScreenResolution();		
 		frameNumber = 0;		
 		muxer = new Muxer(width, height);
 		capture = new Capture(width, height, 32);
+		averageDelay = 0;
 		Initialize();			
 		isDone = false;
 	}
@@ -45,7 +46,7 @@ namespace ScreenOut
 		capture->SetBitmapInfo();				
 		memset(rgbLinesize, 0, 8 * sizeof(int));		
 		rgbLinesize[0] = capture->bitmapWidth;		
-		prevDuration.zero();
+		currentCaptureTime = previousCaptureTime = previousCaptureTime.zero();		
 	}
 
 	void Recorder::CaptureTask()
@@ -56,8 +57,9 @@ namespace ScreenOut
 	void Recorder::CaptureScreen()
 	{		
 		if(!isRecording)
-			return;		
+			return;				
 		capture->TakePic(height, width, rgbBuffer);
+		AdjustCaptureDelay();
 		uint8_t *input = reinterpret_cast<uint8_t *>(rgbBuffer);
 		AVPicture* yuvPicture = new AVPicture;
 		avpicture_alloc(yuvPicture, AV_PIX_FMT_YUV420P, width, height);
@@ -110,19 +112,15 @@ namespace ScreenOut
 			
 		}
 		//sws_scale(swsContext, &input, rgbLinesize, 0, height, yuvPicture->data, yuvPicture->linesize);
-		buffer->push(yuvPicture);
-		++frameNumber;
-		chrono::duration<double> recorded = captureClock.now() - startPoint;
-		logger<< Logger::Level::LOG_INFO << "Captured frame #" << frameNumber 
-			<< " at " << recorded.count() << "s. Diff: " << (recorded - prevDuration).count();
-		prevDuration = recorded;
-		captureTimer.expires_from_now(posix_time::milliseconds(CAPTURE_DELAY));
+		buffer->push(yuvPicture);		
+		++frameNumber;				
+		captureTimer.expires_from_now(posix_time::milliseconds(captureDelay));
 		captureTimer.async_wait(boost::bind(&Recorder::CaptureScreen, this));
 	}
 
 	void Recorder::Multiplex()
 	{
-		muxer->Initialize();
+		muxer->Initialize("test.mp4");
 		int i = 0;
 		AVPicture* lastPicture;
 		while(true)
@@ -148,17 +146,18 @@ namespace ScreenOut
 	{		
 		isRecording = true;
 		captureTimer.async_wait(boost::bind(&Recorder::CaptureScreen, this));
+		startCapture = captureClock.now();
 		captureThread = thread(&Recorder::CaptureTask, this);	
-		SetThreadPriority(captureThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
-		muxerThread = thread(&Recorder::Multiplex, this);			
-		startPoint = captureClock.now();
+		//SetThreadPriority(captureThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
+		muxerThread = thread(&Recorder::Multiplex, this);	
+		//SetThreadPriority(muxerThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
 	}
 
 	void Recorder::Stop()
-	{
-		chrono::duration<double> recorded = captureClock.now() - startPoint;
-		logger << Logger::Level::LOG_INFO << "Must be recorded:" << recorded.count();
+	{				
 		isRecording = false;	
+		logger << Logger::Level::LOG_INFO << "Must be recorded:" << currentCaptureTime.count()
+			<< "; Average delay: " << averageDelay / frameNumber;
 	}
 
 	bool Recorder::IsRecording()
@@ -178,6 +177,21 @@ namespace ScreenOut
 		GetWindowRect(hDesktop, &desktop);	   
 		width = desktop.right;
 		height = desktop.bottom;		
+	}
+
+	void Recorder::AdjustCaptureDelay()
+	{		
+		currentCaptureTime = captureClock.now() - startCapture;
+		double realDelay = (currentCaptureTime - previousCaptureTime).count() * 1000;
+		int correction = (int)ceil(abs(CAPTURE_DELAY - realDelay));
+		captureDelay += realDelay > CAPTURE_DELAY ? -correction : correction ;
+		averageDelay +=realDelay;
+		logger<< Logger::Level::LOG_INFO << "Frame #" << frameNumber 
+			<< " at" << currentCaptureTime.count() 
+			<< "s. Real delay:" << realDelay
+			<<"; Correction:" << correction
+			<< "; Adjusted delay:" << captureDelay;
+		previousCaptureTime = currentCaptureTime;
 	}
 
 	Recorder::~Recorder(void)

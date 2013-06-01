@@ -4,6 +4,8 @@
 #include <boost\thread.hpp>
 #include <boost\asio.hpp>
 
+#define FPS 10
+
 #include "Capture.h"
 #include "Muxer.h"
 #include "Logger.h"
@@ -26,11 +28,13 @@ namespace ScreenOut
 		void CaptureTask();
 		void Multiplex();
 		void GetScreenResolution();
+		void AdjustCaptureDelay();
 	private:
 		boost::asio::io_service ioService;
 		boost::asio::deadline_timer captureTimer;	
 		boost::thread muxerThread;
 		boost::thread captureThread;
+		int captureDelay;		
 
 		std::queue<AVPicture*>* buffer;
 		Muxer* muxer;
@@ -38,15 +42,19 @@ namespace ScreenOut
 		Logger logger;
 		bool isRecording;
 		bool isDone;
-	public:
+	private:
 		boost::chrono::high_resolution_clock captureClock;
-		boost::chrono::high_resolution_clock::time_point startPoint;
-		boost::chrono::duration<double> prevDuration;
+		boost::chrono::high_resolution_clock::time_point startCapture;
+		boost::chrono::duration<double> currentCaptureTime;
+		boost::chrono::duration<double> previousCaptureTime;
 	private:
 		int width;		
 		int height;
 		int frameNumber;
+		double averageDelay;
 		LPVOID rgbBuffer, rgb24Buffer;			
+		
+		LPVOID rgbBuffer;			
 		SwsContext* swsContext;		
 		int rgbLinesize[8];
 		int yuvLinesize[8];					
