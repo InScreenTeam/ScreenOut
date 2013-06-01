@@ -7,7 +7,8 @@ int main(void)
 {
 	ScreenOut::Recorder* recorder = new ScreenOut::Recorder();
 	recorder->Start();
-	cin.get();
+	//cin.get();
+	Sleep(10000);
 	recorder->Stop();
 	while(true)
 	{
@@ -15,5 +16,5 @@ int main(void)
 		if (recorder->IsDone())
 			break;
 	}
-	cin.get();
+	//cin.get();
  }

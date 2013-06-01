@@ -10,7 +10,7 @@
 #pragma comment(lib, "bass\\bass.lib")
 
 #include "targetver.h"
-
+	
 #include <cstdio>
 #include <iostream>
 #include <vector>

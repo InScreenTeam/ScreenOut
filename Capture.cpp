@@ -27,6 +27,8 @@ Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 	SetMapMode(hdcScreen, MM_ANISOTROPIC);
 	ScaleViewportExtEx(hdcScreen, 1, 1, -1, 1, NULL);
 	SetViewportOrgEx(hdcScreen, 0, height, NULL);
+	//ScaleViewportExtEx(hdcCompatible, 1, 1, -1, 1, NULL);
+	
 	
 	if (colourBitCount != 24) 
 	{
@@ -51,7 +53,6 @@ Capture::~Capture()
 		DeleteDC(hdcScreen); 
 		DeleteDC(hdcCompatible); 
 }
-
 //using bitmap information for definition pBitmapInfo
 bool Capture::SetBitmapInfo()
 {
@@ -117,8 +118,20 @@ void Capture::TakePic(int top, int left, int bottom, int right, LPVOID buffer)
 void Capture::TakePic( int bottom, int right, LPVOID buffer )
 {
 	hbmScreen = CreateCompatibleBitmap(hdcScreen, right, bottom);
+	
+	CURSORINFO cursorInfo;
+	cursorInfo.cbSize = sizeof(CURSORINFO);
+	GetCursorInfo(&cursorInfo);
+	
+	HCURSOR cursor = GetCursor();
+	
+	POINT point;
+	GetCursorPos(&point);
+//	std::cout<<point.x<<" "<<point.y<<"\n";
+
 	SelectObject(hdcCompatible, hbmScreen); 
 	BitBlt(hdcCompatible, 0, 0, right, bottom, hdcScreen, 0, 0, SRCCOPY);
+	DrawIcon(hdcCompatible,point.x, bottom-point.y, cursorInfo.hCursor);
 	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
 }
 

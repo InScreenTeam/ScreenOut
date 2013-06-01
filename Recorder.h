@@ -46,7 +46,7 @@ namespace ScreenOut
 		int width;		
 		int height;
 		int frameNumber;
-		LPVOID rgbBuffer;			
+		LPVOID rgbBuffer, rgb24Buffer;			
 		SwsContext* swsContext;		
 		int rgbLinesize[8];
 		int yuvLinesize[8];					

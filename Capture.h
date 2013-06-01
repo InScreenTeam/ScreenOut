@@ -25,6 +25,7 @@ public:
 protected:
 	HDC hdcScreen;
 	HDC hdcCompatible; 
+	
 	HBITMAP hbmScreen;
 	PBITMAPINFO pBitmapInfo;
 	DWORD height, width;

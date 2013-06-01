@@ -41,3 +41,5 @@ $tf*/
 *.wav
 *.ipch
 /ipch
+/Screen
+/ScreenOut
