@@ -9,10 +9,12 @@
 
 using namespace std;
 
-DWORD Sound::bufferLength;
+DWORD Sound::recordBufferLength;
 DWORD Sound::currentLength;
 DWORD Sound::tailLength;
 queue<LPVOID> Sound::recordQueue;
+LPBYTE Sound::recordBuffer;
+DWORD Sound::curRecordBufferLength;
 
 void Sound::SetRecordDeviceVector()
 {
@@ -43,7 +45,8 @@ Sound::Sound(void)
 	}
 	std::cout<<"WOOOOOORKS!";
 	recording = false;
-	bufferLength = BUFFER_LENGTH;
+	recordBufferLength = BUFFER_LENGTH;
+	recordBuffer = new BYTE[recordBufferLength];
 	
 	
 }
@@ -57,7 +60,7 @@ bool Sound::InitBass( DWORD device, DWORD freq, DWORD flags, HWND win, const GUI
 	
 Sound::~Sound(void)
 {
-	
+	delete[] recordBuffer;	
 }
 
 int Sound::GetRecordDeviceCount()
@@ -93,37 +96,20 @@ void *tempBuffer;
 
 BOOL CALLBACK Sound::RecordHandler(HRECORD handle,  const void *buffer,  DWORD length, void *user)
 {
-	fwrite(buffer, 1,length, (FILE*)user);
-	
-	BYTE *p = (BYTE *)buffer;
-	DWORD l = length;
-	DWORD headLength = bufferLength - tailLength;
-
-	if (tailLength > 0)
+	LPBYTE p = (LPBYTE)buffer;
+	BYTE* temp ;
+	for (DWORD i = 0; i < length; ++i)
 	{
-		BYTE *front = (BYTE*)recordQueue.front();
-		front += tailLength;
-		memcpy(front, p, headLength);
-		p += headLength;
+		recordBuffer[curRecordBufferLength++] = p[i];
+		if (curRecordBufferLength == recordBufferLength)
+		{
+			temp = new BYTE[recordBufferLength];
+			memcpy(temp, recordBuffer, recordBufferLength);
+			recordQueue.push(temp);
+			curRecordBufferLength = 0;
+		}
 	}
-	l -= headLength;
-
-	while (l-=length > bufferLength)
-	{
-		tempBuffer = malloc(bufferLength);
-		memcpy(tempBuffer, p, bufferLength);
-		recordQueue.push(tempBuffer);
-		p += bufferLength;
-	}
-	tailLength = l;
-	if (tailLength > 0)
-	{
-		tempBuffer = malloc(bufferLength);
-		memcpy(tempBuffer, p, tailLength);
-		recordQueue.push(tempBuffer);
-	}
-	
-	currentLength += length;
+	//fwrite(buffer, 1,length, (FILE*)user);
 	return true;
 }
 
@@ -158,7 +144,7 @@ bool Sound::RecordStart( DWORD dwSeconds, int deviceNumber, string fileName )
 	if (recording)
 		BASS_ChannelStop(currentRecord);
 	currentFile = fopen(DEFAULT_NAME, "wb");
-	WriteWavHeader(dwSeconds, AUDIO_SAMPLE_RATE, AUDIO_CHANELS, AUDIO_BYTES_PER_SAMPLE, currentFile);
+	//WriteWavHeader(dwSeconds, AUDIO_SAMPLE_RATE, AUDIO_CHANELS, AUDIO_BYTES_PER_SAMPLE, currentFile);
 	if (!BASS_RecordInit(deviceNumber))
 		if(!BASS_RecordInit(DEFAULT_DEVICE_NUMBER))
 			return false;
@@ -174,7 +160,7 @@ bool Sound::RecordStart( DWORD dwSeconds, int deviceNumber, string fileName )
 	reverStruct.fReverbTime = 500;
 	reverStruct.fHighFreqRTRatio = 0.5;
 
-	
+	curRecordBufferLength = 0;
 	tailLength = 0;
 	BASS_FXSetParameters(rever, &reverStruct);
 	BASS_ChannelPlay(currentRecord, false);
@@ -222,13 +208,19 @@ void Sound::Test()
 
 LPVOID Sound::GetSample( DWORD time )
 {
-	LPVOID temp = recordQueue.front();
-	recordQueue.pop();
 	
-	return temp;
+	if (recordQueue.size() > 0)
+	{
+		LPVOID temp = recordQueue.front();
+		recordQueue.pop();
+		return temp;
+	}
+	return NULL;
 }
 
 void Sound::QueuePush( LPVOID buffer, DWORD length )
 {
 	
 }
+
+
