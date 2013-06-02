@@ -43,3 +43,7 @@ $tf*/
 /ipch
 /Screen
 /ScreenOut
+*.LOCAL*
+*.BASE*
+*.BACKUP*
+*.REMOTE*

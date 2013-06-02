@@ -52,9 +52,8 @@ namespace ScreenOut
 		int height;
 		int frameNumber;
 		double averageDelay;
-		LPVOID rgbBuffer, rgb24Buffer;			
-		
-		LPVOID rgbBuffer;			
+		LPVOID rgbBuffer;
+		LPVOID rgb24Buffer;			
 		SwsContext* swsContext;		
 		int rgbLinesize[8];
 		int yuvLinesize[8];					

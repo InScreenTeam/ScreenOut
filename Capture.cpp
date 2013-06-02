@@ -2,11 +2,11 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
-
 #include <StrSafe.h>
 #include <string>
 #include <iostream>
 #include <Windows.h>
+
 #include "Capture.h"
 
 using namespace std;
@@ -27,8 +27,7 @@ Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 	SetMapMode(hdcScreen, MM_ANISOTROPIC);
 	ScaleViewportExtEx(hdcScreen, 1, 1, -1, 1, NULL);
 	SetViewportOrgEx(hdcScreen, 0, height, NULL);
-	//ScaleViewportExtEx(hdcCompatible, 1, 1, -1, 1, NULL);
-	
+	hbmScreen = CreateCompatibleBitmap(hdcScreen, width, height);
 	
 	if (colourBitCount != 24) 
 	{
@@ -45,7 +44,7 @@ Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 		//Error
 		return;
 	}
-	
+	cursorInfo.cbSize = sizeof(CURSORINFO);
 }
 Capture::~Capture()
 {
@@ -69,7 +68,6 @@ bool Capture::SetBitmapInfo()
 	}
 	return true;
 }
-
 void Capture::SetBitmapInfo(LONG width, LONG height, WORD planes,
 				   WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth)
 {
@@ -99,9 +97,8 @@ void Capture::SetBitmapInfo(LONG width, LONG height, WORD planes,
 	this->bitmapWidth = bitmapWidth;
 }
 
-void Capture::TakePic(int top, int left, int bottom, int right, LPVOID buffer)
+void Capture::TakePic(int top, int left, int bottom, int right, LPVOID buffer, bool cursorDraw)
 {
-	hbmScreen =  CreateCompatibleBitmap(hdcScreen,	right-left, bottom-top);
 	SelectObject(hdcCompatible, hbmScreen); 
 	BitBlt(	hdcCompatible,	
 		left,			// x-coordinate of destination rectangle's upper-left corner
@@ -112,27 +109,24 @@ void Capture::TakePic(int top, int left, int bottom, int right, LPVOID buffer)
 		left,			// x-coordinate of source rectangle's upper-left corner  
 		top,			// y-coordinate of source rectangle's upper-left corner
 		SRCCOPY);		// raster operation code
+	if (cursorDraw)
+		CurosorDraw(hdcCompatible, bottom);
 	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
 }
 
 void Capture::TakePic( int bottom, int right, LPVOID buffer )
 {
-	hbmScreen = CreateCompatibleBitmap(hdcScreen, right, bottom);
-	
-	CURSORINFO cursorInfo;
-	cursorInfo.cbSize = sizeof(CURSORINFO);
-	GetCursorInfo(&cursorInfo);
-	
-	HCURSOR cursor = GetCursor();
-	
-	POINT point;
-	GetCursorPos(&point);
-//	std::cout<<point.x<<" "<<point.y<<"\n";
-
 	SelectObject(hdcCompatible, hbmScreen); 
 	BitBlt(hdcCompatible, 0, 0, right, bottom, hdcScreen, 0, 0, SRCCOPY);
-	DrawIcon(hdcCompatible,point.x, bottom-point.y, cursorInfo.hCursor);
+	CurosorDraw(hdcCompatible, bottom);
 	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
+}
+
+void Capture::CurosorDraw(HDC hDC, int bottom)
+{
+	GetCursorInfo(&cursorInfo);
+	GetCursorPos(&point);
+	DrawIcon(hdcCompatible,point.x, bottom-point.y, cursorInfo.hCursor);
 }
 
 void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)

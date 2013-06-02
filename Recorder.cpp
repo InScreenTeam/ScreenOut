@@ -63,12 +63,12 @@ namespace ScreenOut
 		uint8_t *input = reinterpret_cast<uint8_t *>(rgbBuffer);
 		AVPicture* yuvPicture = new AVPicture;
 		avpicture_alloc(yuvPicture, AV_PIX_FMT_YUV420P, width, height);
-		int i = 0;
+		/*int i = 0;
 		int j = 0;
 		int ui = width*height;
 		int vi = ui + ui/4;
 		int r,g,b;
-		/*char maskTemp[] = {0,1,2,4, 5,6,8,9, 10,12,13,14, -1,-1,-1,-1};
+		char maskTemp[] = {0,1,2,4, 5,6,8,9, 10,12,13,14, -1,-1,-1,-1};
 		char *mask = (char*)_aligned_malloc(16,16);
 		memcpy(mask, maskTemp, 16);
 		BYTE *src = (BYTE*)rgbBuffer;
@@ -90,7 +90,7 @@ namespace ScreenOut
 				dst += 3;
 			}
 			
-		}*/
+		}
 
 		for (int h = 0; h < height; ++h)
 		{
@@ -110,8 +110,8 @@ namespace ScreenOut
 				i+=4;	
 			}
 			
-		}
-		//sws_scale(swsContext, &input, rgbLinesize, 0, height, yuvPicture->data, yuvPicture->linesize);
+		}*/
+		sws_scale(swsContext, &input, rgbLinesize, 0, height, yuvPicture->data, yuvPicture->linesize);
 		buffer->push(yuvPicture);		
 		++frameNumber;				
 		captureTimer.expires_from_now(posix_time::milliseconds(captureDelay));
@@ -128,7 +128,10 @@ namespace ScreenOut
 			if(buffer->empty())
 			{
 				if(isRecording)
+				{
+					Sleep(20);//replace to something better
 					continue;				
+				}
 				break;
 			}
 			AVPicture* tmpBuffer =  buffer->front();
