@@ -1,21 +1,23 @@
 #include "stdafx.h"
-#include "Sound.h"
-#include <vector>
-#include <list>
 #include <assert.h>
 #include <math.h>
 #include <commctrl.h>
 
-
 #pragma warning(disable: 4996)
 
-DWORD currentLength;
-queue<LPVOID> recordQueue;
+#include "Sound.h"
+
+using namespace std;
+
+DWORD Sound::bufferLength;
+DWORD Sound::currentLength;
+DWORD Sound::tailLength;
+queue<LPVOID> Sound::recordQueue;
 
 void Sound::SetRecordDeviceVector()
 {
 	BASS_DEVICEINFO *info = new BASS_DEVICEINFO();
-	for (int i = 0; i < recordDeviceVector.size(); ++i)
+	for (UINT i = 0; i < recordDeviceVector.size(); ++i)
 		delete recordDeviceVector[i];
 	int n = 0;
 	while (BASS_RecordGetDeviceInfo(n, info))
@@ -24,7 +26,6 @@ void Sound::SetRecordDeviceVector()
 		info = new BASS_DEVICEINFO();
 		++n;
 	}	
-
 }
 
 Sound::Sound(void)
@@ -42,6 +43,8 @@ Sound::Sound(void)
 	}
 	std::cout<<"WOOOOOORKS!";
 	recording = false;
+	bufferLength = BUFFER_LENGTH;
+	
 	
 }
 
@@ -67,7 +70,7 @@ std::string Sound::GetRecordDeviceName( DWORD index ) const
 }
 bool Sound::SetRecordDevice( DWORD index )
 {
-	return BASS_RecordSetDevice(index);
+	return (BASS_RecordSetDevice(index) > -1);
 }
 void Sound::RecordFree()
 {
@@ -91,14 +94,33 @@ void *tempBuffer;
 BOOL CALLBACK Sound::RecordHandler(HRECORD handle,  const void *buffer,  DWORD length, void *user)
 {
 	fwrite(buffer, 1,length, (FILE*)user);
-	char* p = (char*)buffer;
 	
-	for (int i = 0; i < length/4096 ; i++)
+	BYTE *p = (BYTE *)buffer;
+	DWORD l = length;
+	DWORD headLength = bufferLength - tailLength;
+
+	if (tailLength > 0)
 	{
-		tempBuffer = malloc(4096);
-		memcpy(tempBuffer, p, 4096);
+		BYTE *front = (BYTE*)recordQueue.front();
+		front += tailLength;
+		memcpy(front, p, headLength);
+		p += headLength;
+	}
+	l -= headLength;
+
+	while (l-=length > bufferLength)
+	{
+		tempBuffer = malloc(bufferLength);
+		memcpy(tempBuffer, p, bufferLength);
 		recordQueue.push(tempBuffer);
-		for (int j = 0; j < 4096; j++) p++;
+		p += bufferLength;
+	}
+	tailLength = l;
+	if (tailLength > 0)
+	{
+		tempBuffer = malloc(bufferLength);
+		memcpy(tempBuffer, p, tailLength);
+		recordQueue.push(tempBuffer);
 	}
 	
 	currentLength += length;
@@ -107,6 +129,7 @@ BOOL CALLBACK Sound::RecordHandler(HRECORD handle,  const void *buffer,  DWORD l
 
 void Sound::WriteWavHeader( DWORD dwSeconds, DWORD sampleRate, WORD chanelsCount, WORD bytesPerSample, FILE* wav_file )
 {
+
 	if (sampleRate<=0) 
 		sampleRate = 44100;
 	DWORD samplesNum = sampleRate*dwSeconds;
@@ -141,7 +164,7 @@ bool Sound::RecordStart( DWORD dwSeconds, int deviceNumber, string fileName )
 			return false;
 	currentLength = 0;
 	recording = true;
-	BASS_SetConfig(BASS_CONFIG_REC_BUFFER, BASS_RECORD_BUFFER_SIZE);
+	//BASS_SetConfig(BASS_CONFIG_REC_BUFFER, BASS_RECORD_BUFFER_SIZE);
     currentRecord =  BASS_RecordStart(AUDIO_SAMPLE_RATE, AUDIO_CHANELS, BASS_RECORD_PAUSE , (RECORDPROC*)Sound::RecordHandler, currentFile);
 	HFX rever = BASS_ChannelSetFX(currentRecord,BASS_FX_DX8_REVERB, 0 );
 
@@ -152,7 +175,7 @@ bool Sound::RecordStart( DWORD dwSeconds, int deviceNumber, string fileName )
 	reverStruct.fHighFreqRTRatio = 0.5;
 
 	
-	
+	tailLength = 0;
 	BASS_FXSetParameters(rever, &reverStruct);
 	BASS_ChannelPlay(currentRecord, false);
 	return true;
@@ -161,7 +184,7 @@ bool Sound::RecordStart( DWORD dwSeconds, int deviceNumber, string fileName )
 bool Sound::RecordStop()
 {
 	recording = false;
-	return BASS_ChannelStop(currentRecord) & fclose(currentFile);
+	return ((BASS_ChannelStop(currentRecord) & fclose(currentFile)) > -1);
 }
 
  
@@ -184,10 +207,10 @@ void Sound::Test()
 	const DWORD dwSeconds = 2;
 	const DWORD bufferSize = AUDIO_SAMPLE_RATE*AUDIO_CHANELS*AUDIO_BYTES_PER_SAMPLE*dwSeconds;
 	short buffer[bufferSize];
-	float amplitude = 3200;
-	float freq_Hz = 100;
-	float phase=0;
-	float freq_radians_per_sample = freq_Hz*2*M_PI/AUDIO_SAMPLE_RATE;
+	double amplitude = 3200;
+	double freq_Hz = 100;
+	double phase=0;
+	double freq_radians_per_sample = freq_Hz*2*M_PI/AUDIO_SAMPLE_RATE;
 //fill buffer with a sine wave 
 	for (int i = 0; i < bufferSize; i++)
 	{
@@ -203,4 +226,9 @@ LPVOID Sound::GetSample( DWORD time )
 	recordQueue.pop();
 	
 	return temp;
+}
+
+void Sound::QueuePush( LPVOID buffer, DWORD length )
+{
+	
 }

@@ -1,17 +1,14 @@
-#pragma once
-#include "stdafx.h"
-#include <queue>
+#ifndef SOUND_H
+#define SOUND_H
 
-using namespace std;
-
-#define _USE_MATH_DEFINES
 #define AUDIO_SAMPLE_RATE 48000
 #define AUDIO_CHANELS 2
 #define AUDIO_BYTES_PER_SAMPLE 2
 #define DEFAULT_NAME "test.wav"
 #define DEFAULT_DEVICE_NUMBER -1
-#define BASS_RECORD_BUFFER_SIZE 1024
+#define BUFFER_LENGTH 4096
 
+using namespace std;
 
 typedef struct {
 	float fInGain;
@@ -22,13 +19,17 @@ typedef struct {
 
 class Sound
 {
+	static DWORD currentLength;
+	static DWORD bufferLength;
+	static DWORD tailLength;
+	static queue<LPVOID> recordQueue;
 	
 	bool recording;
-	
 	HRECORD currentRecord;
 	vector<BASS_DEVICEINFO*> recordDeviceVector;
 	FILE* currentFile;
 	DWORD currentRecordSize;
+	
 public:
 	Sound(void);
 	bool InitBass(DWORD device, DWORD freq, DWORD flags, HWND win, const GUID *dsguid);
@@ -47,5 +48,6 @@ public:
 	void Test();
 	void WriteWavHeader( DWORD dwSeconds, DWORD sampleRate, WORD chanelsCount, WORD bytesPerSample, FILE* wav_file);
 	LPVOID GetSample(DWORD time);
+	void QueuePush(LPVOID buffer, DWORD length);
 };
-
+#endif

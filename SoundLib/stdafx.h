@@ -7,13 +7,15 @@
 
 #include "bass\bass.h"
 
+#define _USE_MATH_DEFINES
+
 #pragma comment(lib, "bass\\bass.lib")
 
-#include "targetver.h"
-	
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
+#include <queue>
 
 
 
