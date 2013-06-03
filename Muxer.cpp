@@ -181,7 +181,7 @@ namespace ScreenOut
 		pkt.stream_index = audioStream->index;
 		
 		ret = av_interleaved_write_frame(formatContext, &pkt);
-		if (ret != 0) \
+		if (ret != 0)
 		{
 			logger << Logger::Level::LOG_ERROR << "Error while writing audio frame at"
 				<< CurrentAudioTimeStamp() << "s.";								
@@ -274,6 +274,21 @@ namespace ScreenOut
 			} 
 			logger << Logger::Level::LOG_INFO << "Current frame pts: " << 
 			(double)frame->pts * videoStream->time_base.num / videoStream->time_base.den <<
+			"; Stream pts: " << CurrentVideoTimeStamp() <<
+			";";
+			av_free_packet(&packet);
+		} while (got_packet);
+		do
+		{
+			av_init_packet(&packet);			
+			ret = avcodec_encode_audio2(audioStream->codec, &packet, NULL, &got_packet);		
+			if (!ret && got_packet && packet.size) 
+			{
+				packet.stream_index = audioStream->index;				
+				ret = av_interleaved_write_frame(formatContext, &packet);
+			} 
+			logger << Logger::Level::LOG_INFO << "Current audio frame pts: " << 
+			(double)frame->pts * audioStream->time_base.num / audioStream->time_base.den <<
 			"; Stream pts: " << CurrentVideoTimeStamp() <<
 			";";
 			av_free_packet(&packet);

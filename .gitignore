@@ -43,6 +43,7 @@ $tf*/
 /ipch
 /Screen
 /ScreenOut
+/CodeAnalyst
 *.LOCAL*
 *.BASE*
 *.BACKUP*

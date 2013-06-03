@@ -27,6 +27,7 @@ namespace ScreenOut
 		frameNumber = 0;		
 		muxer = new Muxer(width, height);
 		capture = new Capture(width, height, 32);
+		sound = new Sound();
 		averageDelay = 0;
 		Initialize();			
 		isDone = false;
@@ -125,20 +126,31 @@ namespace ScreenOut
 		AVPicture* lastPicture;
 		while(true)
 		{
-			if(buffer->empty())
+			if(muxer->CurrentAudioTimeStamp() < muxer->CurrentVideoTimeStamp())
 			{
-				if(isRecording)
-				{
-					Sleep(20);//replace to something better
-					continue;				
-				}
-				break;
+				int16_t* samples = new int16_t[BUFFER_LENGTH];
+				if(!sound->GetSample(samples))
+					continue;
+				muxer->WriteAudioFrame(samples);
+				delete[] samples;
 			}
-			AVPicture* tmpBuffer =  buffer->front();
-			buffer->pop();
-			muxer->WriteVideoFrame(tmpBuffer);
-			++i;
-			avpicture_free(tmpBuffer);						
+			else
+			{
+				if(buffer->empty())
+				{
+					if(isRecording)
+					{					
+						this_thread::sleep_for(chrono::milliseconds(captureDelay / 2));
+						continue;				
+					}
+					break;
+				}
+				AVPicture* tmpBuffer =  buffer->front();
+				buffer->pop();
+				muxer->WriteVideoFrame(tmpBuffer);
+				avpicture_free(tmpBuffer);	
+				++i;
+			}						
 		}			
 		logger << Logger::Level::LOG_INFO << "frames count:" << i;
 		muxer->Flush();
@@ -153,12 +165,14 @@ namespace ScreenOut
 		captureThread = thread(&Recorder::CaptureTask, this);	
 		//SetThreadPriority(captureThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
 		muxerThread = thread(&Recorder::Multiplex, this);	
+		sound->RecordStart(0);
 		//SetThreadPriority(muxerThread.native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
 	}
 
 	void Recorder::Stop()
 	{				
 		isRecording = false;	
+		sound->RecordStop();
 		logger << Logger::Level::LOG_INFO << "Must be recorded:" << currentCaptureTime.count()
 			<< "; Average delay: " << averageDelay / frameNumber;
 	}

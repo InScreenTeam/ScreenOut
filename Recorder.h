@@ -9,6 +9,7 @@
 #include "Capture.h"
 #include "Muxer.h"
 #include "Logger.h"
+#include "SoundLib\Sound.h"
 #include "inttypes.h"
 
 namespace ScreenOut
@@ -39,6 +40,7 @@ namespace ScreenOut
 		std::queue<AVPicture*>* buffer;
 		Muxer* muxer;
 		Capture* capture;
+		Sound* sound;
 		Logger logger;
 		bool isRecording;
 		bool isDone;
