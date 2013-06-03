@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 #include <Windows.h>
-
+#include <Windowsx.h>
 #include "Capture.h"
 
 using namespace std;
@@ -49,6 +49,7 @@ Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 		return;
 	}
 	cursorInfo.cbSize = sizeof(CURSORINFO);
+	//SetEffects();
 }
 Capture::~Capture()
 {
@@ -241,3 +242,39 @@ bool Capture::ScreenShot( LPWSTR fileName )
 	return true;
 }
 
+
+//HHOOK Capture::mouseHook;
+//HANDLE HThread[3] ;
+//DWORD DwThreadId[3];
+//
+//DWORD WINAPI Capture::ThreadFunc(LPVOID lpParam)
+//{
+//
+//	mouseHook = SetWindowsHookEx (WH_MOUSE_LL, MouseFilterFunc, GetModuleHandle(NULL), 0);
+//	return 1;
+//}
+//
+//bool Capture::SetEffects()
+//{
+//	CreateThread(NULL, 0,ThreadFunc,   0, 	1, &DwThreadId[0]);  
+//	
+//	return true;
+//}
+//
+//
+//LRESULT CALLBACK Capture::MouseFilterFunc( int nCode, WPARAM wParam, LPARAM lParam )
+//{
+//	switch (wParam)
+//	{
+//	cout<<"WORKs";
+//	case WM_LBUTTONDOWN:
+//	
+//		int xPos, yPos;
+//		xPos = GET_X_LPARAM(lParam); 
+//		yPos = GET_Y_LPARAM(lParam); 
+//		cout<<"WORKs";
+//	break;
+//	}
+//	return CallNextHookEx(mouseHook, nCode, wParam, lParam);
+//}
+//

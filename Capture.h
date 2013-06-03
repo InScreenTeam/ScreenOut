@@ -14,6 +14,7 @@ public:
 	DWORD bitmapWidth;
 
 protected:
+	static HHOOK mouseHook;
 	HDC hdcScreen;
 	HDC hdcCompatible; 
 	CURSORINFO cursorInfo;
@@ -31,10 +32,13 @@ public:
 	void WriteBMP(LPWSTR filename, LPVOID buffer);
 	bool ScreenShot(LPWSTR fileName);
 	bool SetBitmapInfo();	
+	bool SetEffects();
+	static LRESULT CALLBACK MouseFilterFunc(int nCode, WPARAM wParam, LPARAM lParam);
 protected:
 	void SetBitmapInfo(LONG width, LONG height, WORD planes,
 							  WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth);
 	inline HCURSOR Capture::GetCurrentCursorHandle();
 	inline void CurosorDraw(HDC hDC, int bottom);
+	static DWORD WINAPI ThreadFunc(LPVOID lpParam);
 };
 #endif

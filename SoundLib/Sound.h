@@ -2,6 +2,8 @@
 #define SOUND_H
 #include "stdafx.h"
 
+#include "FXStructs.h"
+
 #define AUDIO_SAMPLE_RATE 48000
 #define AUDIO_CHANELS 2
 #define AUDIO_BYTES_PER_SAMPLE 2
@@ -11,12 +13,6 @@
 
 using namespace std;
 
-typedef struct {
-	float fInGain;
-	float fReverbMix;
-	float fReverbTime;
-	float fHighFreqRTRatio;
-} BASS_FX_DX8_REVERB_STRUCT;
 
 class Sound
 {
