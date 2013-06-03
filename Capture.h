@@ -4,6 +4,7 @@
 #define RGB_PLANES 4
 #define COLOUR_BIT_COUNT 32
 #define MIN_BIT_COUNT 24
+#define CONSOLE_WINDOW_CLASS 49841
 
 using namespace std;
 
@@ -32,6 +33,7 @@ public:
 protected:
 	void SetBitmapInfo(LONG width, LONG height, WORD planes,
 							  WORD bitCount, DWORD compression, DWORD clrImportant, DWORD bitmapWidth);
+	inline HCURSOR Capture::GetCurrentCursorHandle();
 	inline void CurosorDraw(HDC hDC, int bottom);
 };
 #endif

@@ -43,7 +43,6 @@ Sound::Sound(void)
 		std::cout << "init device 0 failed\n";
 		return;
 	}
-	std::cout<<"WOOOOOORKS!";
 	recording = false;
 	recordBufferLength = BUFFER_LENGTH;
 	recordBuffer = new BYTE[recordBufferLength];
@@ -208,7 +207,6 @@ void Sound::Test()
 
 LPVOID Sound::GetSample( DWORD time )
 {
-	
 	if (recordQueue.size() > 0)
 	{
 		LPVOID temp = recordQueue.front();

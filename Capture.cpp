@@ -24,9 +24,12 @@ Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 
 	hdcScreen = GetDC(NULL);
 	hdcCompatible = CreateCompatibleDC(hdcScreen);
-	SetMapMode(hdcScreen, MM_ANISOTROPIC);
-	ScaleViewportExtEx(hdcScreen, 1, 1, -1, 1, NULL);
-	SetViewportOrgEx(hdcScreen, 0, height, NULL);
+	//SetMapMode(hdcScreen, MM_ANISOTROPIC);
+	//ScaleViewportExtEx(hdcScreen, 1, 1, -1, 1, NULL);
+	//SetViewportOrgEx(hdcScreen, 0, height, NULL);
+	SetMapMode(hdcCompatible, MM_ANISOTROPIC);
+	ScaleViewportExtEx(hdcCompatible, 1, 1, -1, 1, NULL);
+	SetViewportOrgEx(hdcCompatible, 0, height, NULL);
 	hbmScreen = CreateCompatibleBitmap(hdcScreen, width, height);
 	
 	if (colourBitCount != 24) 
@@ -122,11 +125,39 @@ void Capture::TakePic( int bottom, int right, LPVOID buffer )
 	GetDIBits(hdcScreen, hbmScreen, 0, pBitmapInfo->bmiHeader.biHeight,	buffer, pBitmapInfo, DIB_RGB_COLORS);
 }
 
+HCURSOR Capture::GetCurrentCursorHandle()
+{
+	GetCursorPos(&point);
+	HWND hWnd = WindowFromPoint(point);
+	if (GetClassWord(hWnd, GCW_ATOM) == CONSOLE_WINDOW_CLASS)
+		return LoadCursorW(NULL, IDC_ARROW);
+			
+	DWORD dwThreadID, dwCurrentThreadID;
+
+	dwThreadID = GetWindowThreadProcessId(hWnd, NULL);
+	dwCurrentThreadID = GetCurrentThreadId();
+
+	if (dwCurrentThreadID != dwThreadID)
+	{
+		if (AttachThreadInput(dwCurrentThreadID, dwThreadID, TRUE))
+		{
+			return GetCursor();
+			AttachThreadInput(dwCurrentThreadID, dwThreadID, FALSE);
+		}
+	} 
+	else
+		return GetCursor();
+
+	return NULL;
+}
+
 void Capture::CurosorDraw(HDC hDC, int bottom)
 {
-	GetCursorInfo(&cursorInfo);
-	GetCursorPos(&point);
-	DrawIcon(hdcCompatible,point.x, bottom-point.y, cursorInfo.hCursor);
+	ICONINFO ii;
+	
+	HCURSOR cursor =  GetCurrentCursorHandle();
+	GetIconInfo(cursor, &ii);
+	DrawIcon(hDC,point.x-ii.xHotspot, point.y-ii.yHotspot, cursor);
 }
 
 void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
