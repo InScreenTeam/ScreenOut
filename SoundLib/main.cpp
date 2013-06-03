@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	}*/
 	//sound->RecordStart(10);
 	//sound->Test();
-	sound->RecordStart(5,-1, "test2.wav");
+	sound->RecordStart(-1);
 	Sleep(5000);
 	sound->RecordStop();
 	return 1;

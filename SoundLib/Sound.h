@@ -23,7 +23,6 @@ class Sound
 	static DWORD currentLength;
 	static DWORD curRecordBufferLength;
 	static DWORD recordBufferLength;
-	static DWORD tailLength;
 	static LPBYTE recordBuffer;
 	static queue<LPVOID> recordQueue;
 
@@ -44,13 +43,14 @@ public:
 	int GetRecordDeviceCount();
 	bool SetRecordDevice(DWORD index);
 	void RecordFree();
-	bool RecordStart(DWORD dwSeconds, int deviceNumber, string fileName);
-	static BOOL CALLBACK RecordHandler(HRECORD handle,  const void *buffer,  DWORD length, void *user);
+	bool RecordStart(int deviceNumber);
+	static BOOL CALLBACK QueueRecordHandler(HRECORD handle, const void *buffer, DWORD length, void *user);
+	static BOOL CALLBACK WavRecordHandler(HRECORD handle, const void *buffer, DWORD length, void *user);
 	bool RecordStop();
-	void WriteWav( DWORD dwSeconds, DWORD sampleRate, WORD chanelsCount, WORD bytesPerSample, string fileName, short *data );
+	void WriteWav( DWORD dwSeconds, DWORD sampleRate, WORD chanelsCount, WORD bytesPerSample, string fileName );
 	void Test();
 	void WriteWavHeader( DWORD dwSeconds, DWORD sampleRate, WORD chanelsCount, WORD bytesPerSample, FILE* wav_file);
-	static LPVOID GetSample(DWORD time);
-	void QueuePush(LPVOID buffer, DWORD length);
+	static bool GetSample(void *const outputBuffer);
+	static void RecordQueuePush(LPVOID buffer, DWORD length);
 };
 #endif
