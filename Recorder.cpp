@@ -42,7 +42,7 @@ namespace ScreenOut
 		}		
 		swsContext = sws_getContext(width, height, AV_PIX_FMT_RGB32,
 			width, height, AV_PIX_FMT_YUV420P,SWS_FAST_BILINEAR , NULL,  NULL, NULL);		
-		capture->TakePic(height, width, NULL);
+		//capture->TakePic(height, width, NULL); //released in capture
 		capture->SetBitmapInfo();				
 		memset(rgbLinesize, 0, 8 * sizeof(int));		
 		rgbLinesize[0] = capture->bitmapWidth;		

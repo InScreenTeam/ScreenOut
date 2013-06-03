@@ -28,7 +28,8 @@ public:
 
 	void TakePic(int top, int left, int bottom, int right, LPVOID buffer, bool cursorDraw);
 	void TakePic(int bottom, int right, LPVOID buffer);
-	void WriteBMP(LPTSTR filename, HBITMAP bitmap, HDC hDC);
+	void WriteBMP(LPWSTR filename, LPVOID buffer);
+	bool ScreenShot(LPWSTR fileName);
 	bool SetBitmapInfo();	
 protected:
 	void SetBitmapInfo(LONG width, LONG height, WORD planes,

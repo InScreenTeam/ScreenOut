@@ -105,6 +105,7 @@ BOOL CALLBACK Sound::QueueRecordHandler( HRECORD handle, const void *buffer, DWO
 BOOL CALLBACK Sound::WavRecordHandler( HRECORD handle, const void *buffer, DWORD length, void *user )
 {
 	fwrite(buffer, 1, length, (FILE*)user);
+	return 1;
 }
 
 //information about the WAV file format from http://ccrma.stanford.edu/courses/422/projects/WaveFormat/

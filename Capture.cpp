@@ -13,6 +13,7 @@ using namespace std;
 
 // We need to create a CompatibleDC with 'hdcScreen' because CreateCompatibleBitmap() only accepts this type of handle.
 // bitsCount - bits for pixel in image
+//it is necessary to call SetBitmapInfo()
 Capture::Capture(DWORD width, DWORD height,  WORD colourBitCount)
 {
 	if ((height == 0 ) || (width == 0)  || (colourBitCount < MIN_BIT_COUNT))
@@ -67,7 +68,11 @@ bool Capture::SetBitmapInfo()
 	}
 	else
 	{
-		return false;
+		TakePic(height, width, NULL);
+		if (hbmScreen > 0)
+			SetBitmapInfo();
+		else
+			return false;
 	}
 	return true;
 }
@@ -160,89 +165,79 @@ void Capture::CurosorDraw(HDC hDC, int bottom)
 	DrawIcon(hDC,point.x-ii.xHotspot, point.y-ii.yHotspot, cursor);
 }
 
-void Capture::WriteBMP(LPTSTR filename, HBITMAP hBitmap, HDC hDC)
+void Capture::WriteBMP(LPWSTR filename, LPVOID buffer )
 {
-	BITMAP bitmap; 
 	HANDLE fileHandle;
 	BITMAPFILEHEADER bitmapFileHeader;
 	PBITMAPINFOHEADER pBitmapInfoHeader;
-	LPBYTE lpBits; // memory pointer 
 	DWORD dwTotal; // total count of bytes 
 	DWORD cb; // incremental count of bytes 
 	BYTE *hp; // byte pointer 
 	DWORD dwTmp; 
 
-	if (!GetObject(hBitmap, sizeof(BITMAP), (LPVOID)&bitmap)){
-		//AfxMessageBox("Could not retrieve bitmap info");
-		return;
-	}
-	
 	pBitmapInfoHeader = (PBITMAPINFOHEADER) pBitmapInfo; 
-	lpBits = (LPBYTE) GlobalAlloc(GMEM_FIXED, pBitmapInfoHeader->biSizeImage);
-
-	if (!lpBits)
-	{
-		return;
-	}
-
-	// Retrieve the color table (RGBQUAD array) and the bits 
-	if (!GetDIBits(hDC, hBitmap, 0, (WORD)pBitmapInfoHeader->biHeight, lpBits, pBitmapInfo, DIB_RGB_COLORS))
-	{
-			//AfxMessageBox("writeBMP::GetDIB error");
-			return;
-	}
+	LPBYTE lpBits = (LPBYTE)buffer;
 
 	// Create the .BMP file. 
 	fileHandle = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, (DWORD) 0, 
-		NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 
-		(HANDLE) NULL); 
+							NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE) NULL); 
 	if (fileHandle == INVALID_HANDLE_VALUE){
-		//MessageBox(hWND,CHAR("Could not create file for writing"), NULL, NULL);
+		MessageBox(NULL, TEXT("Could not create file for writing"), NULL, NULL);
 		return;
 	}
 	bitmapFileHeader.bfType = 0x4d42; // 0x42 = "B" 0x4d = "M" 
 	// Compute the size of the entire file. 
-	bitmapFileHeader.bfSize = (DWORD) (sizeof(BITMAPFILEHEADER) + 
-		pBitmapInfoHeader->biSize + pBitmapInfoHeader->biClrUsed 
-		* sizeof(RGBQUAD) + pBitmapInfoHeader->biSizeImage); 
+	bitmapFileHeader.bfSize = (DWORD)(sizeof(BITMAPFILEHEADER) + pBitmapInfoHeader->biSize + 
+							  pBitmapInfoHeader->biClrUsed * sizeof(RGBQUAD) + pBitmapInfoHeader->biSizeImage); 
 	bitmapFileHeader.bfReserved1 = 0; 
 	bitmapFileHeader.bfReserved2 = 0; 
 
 	// Compute the offset to the array of color indices. 
 	bitmapFileHeader.bfOffBits = (DWORD) sizeof(BITMAPFILEHEADER) + 
-		pBitmapInfoHeader->biSize + pBitmapInfoHeader->biClrUsed 
-		* sizeof (RGBQUAD); 
+		pBitmapInfoHeader->biSize + pBitmapInfoHeader->biClrUsed * sizeof(RGBQUAD); 
 
 	// Copy the BITMAPFILEHEADER into the .BMP file. 
-	if (!WriteFile(fileHandle, (LPVOID) &bitmapFileHeader, sizeof(BITMAPFILEHEADER), 
-		(LPDWORD) &dwTmp, NULL)) {
-			//AfxMessageBox("Could not write in to file");
-			return;
+	if (!WriteFile(fileHandle, (LPVOID) &bitmapFileHeader, sizeof(BITMAPFILEHEADER), (LPDWORD) &dwTmp, NULL))
+	{
+		return;
 	}
 
 	// Copy the BITMAPINFOHEADER and RGBQUAD array into the file. 
 	if (!WriteFile(fileHandle, (LPVOID) pBitmapInfoHeader, sizeof(BITMAPINFOHEADER) 
-		+ pBitmapInfoHeader->biClrUsed * sizeof (RGBQUAD), 
-		(LPDWORD) &dwTmp, ( NULL))){
-			//AfxMessageBox("Could not write in to file");
+		+ pBitmapInfoHeader->biClrUsed * sizeof (RGBQUAD), (LPDWORD) &dwTmp, ( NULL)))
+	{
 			return;
 	}
-
 
 	// Copy the array of color indices into the .BMP file. 
 	dwTotal = cb = pBitmapInfoHeader->biSizeImage; 
 	hp = lpBits; 
-	if (!WriteFile(fileHandle, (LPSTR) hp, (int) cb, (LPDWORD) &dwTmp,NULL)){
-		// AfxMessageBox("Could not write in to file");
+	if (!WriteFile(fileHandle, (LPSTR) hp, (int) cb, (LPDWORD) &dwTmp,NULL))
+	{
 		return;
 	}
 	
-	if (!CloseHandle(fileHandle)){
-		//AfxMessageBox("Could not close file");
+	if (!CloseHandle(fileHandle))
+	{
 		return;
 	}
 
-	// Free memory. 
 	GlobalFree((HGLOBAL)lpBits);
+}
+
+bool Capture::ScreenShot( LPWSTR fileName )
+{
+	RECT desktop;   
+	HWND hDesktop = GetDesktopWindow();   
+	GetWindowRect(hDesktop, &desktop);	   
+	LPVOID buffer = GlobalAlloc(GMEM_FIXED, pBitmapInfo->bmiHeader.biSizeImage);
+	ScaleViewportExtEx(hdcCompatible, 1, 1, 1, 1, NULL);
+	SetViewportOrgEx(hdcCompatible, 0, 0, NULL);
+	TakePic(desktop.right, desktop.bottom, buffer);
+	WriteBMP(fileName, buffer);
+	ScaleViewportExtEx(hdcCompatible, 1, 1, -1, 1, NULL);
+	SetViewportOrgEx(hdcCompatible, 0, height, NULL);
+	GlobalFree(buffer);
+	return true;
 }
 
