@@ -21,7 +21,7 @@ namespace ScreenOut
 		void Start();
 		void Stop();
 		bool IsRecording();
-		bool IsDone();
+		bool IsDone();		
 		~Recorder(void);
 	private:
 		void Initialize();
@@ -54,11 +54,9 @@ namespace ScreenOut
 		int height;
 		int frameNumber;
 		double averageDelay;
-		LPVOID rgbBuffer;
-		LPVOID rgb24Buffer;			
+		LPVOID rgbBuffer;				
 		SwsContext* swsContext;		
-		int rgbLinesize[8];
-		int yuvLinesize[8];					
+		int rgbLinesize[8];		
 	};
 }
 

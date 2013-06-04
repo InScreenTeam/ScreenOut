@@ -9,7 +9,7 @@ int main(void)
 	recorder->Start();
 	
 	//cin.get();
-	Sleep(5000);
+	Sleep(20000);
 	recorder->Stop();
 	while(true)
 	{

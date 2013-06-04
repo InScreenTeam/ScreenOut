@@ -17,7 +17,7 @@ namespace ScreenOut
 	public:
 		Muxer(int width, int height);
 		void Initialize(char* filename);
-		void WriteVideoFrame(AVPicture* buffer);
+		void WriteVideoFrame(AVPicture* buffer, int frameNumber);
 		void WriteAudioFrame(int16_t* samples);
 		double CurrentVideoTimeStamp();
 		double CurrentAudioTimeStamp();
@@ -46,7 +46,6 @@ namespace ScreenOut
 		AVCodec* videoCodec;		
 		AVFrame* frame;
 		int audioFrameSize;
-		int16_t* samplesBuffer;
 		double audioTimestamp; 
 		double videoTimestamp;
 	};

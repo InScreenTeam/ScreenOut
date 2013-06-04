@@ -35,22 +35,17 @@ Sound::Sound(void)
 		std::cout << "device count = 0\n";
 		return;
 	}
-	if (!InitBass(-1, AUDIO_SAMPLE_RATE, NULL, NULL, NULL))
-	{
-		std::cout << "init device 0 failed\n";
-		return;
-	}
-	std::cout<<"WOOOOOORKS!";
 	recording = false;
 	recordBufferLength = BUFFER_LENGTH;
 	recordBuffer = new BYTE[recordBufferLength];
-	
-	
 }
+
 Sound::~Sound(void)
 {
+	RecordFree();
 	delete[] recordBuffer;	
 }
+
 void Sound::SetRecordDeviceVector()
 {
 	BASS_DEVICEINFO *info = new BASS_DEVICEINFO();
@@ -66,8 +61,12 @@ void Sound::SetRecordDeviceVector()
 }
 bool Sound::InitBass( DWORD device, DWORD freq, DWORD flags, HWND win, const GUID *dsguid )
 {
-	if (!BASS_Init(device, freq, flags, win, dsguid))
+	BOOL result;
+	result = BASS_Init(device, freq, flags, win, dsguid);
+	if (result != BASS_ERROR_ALREADY)
+	{
 		return false;
+	}
 	return true;
 }
 	
@@ -86,6 +85,7 @@ bool Sound::SetRecordDevice( DWORD index )
 void Sound::RecordFree()
 {
 	BASS_RecordFree();
+
 }
 
 BOOL CALLBACK Sound::QueueRecordHandler( HRECORD handle, const void *buffer, DWORD length, void *user )
@@ -150,7 +150,9 @@ bool Sound::RecordStart( int deviceNumber )
 bool Sound::RecordStop()
 {
 	recording = false;
-	return ((BASS_ChannelStop(currentRecord) ) > -1);
+
+	BASS_ChannelStop(currentRecord);
+	return BASS_RecordFree();
 }
 void Sound::RecordQueuePush( LPVOID buffer, DWORD length )
 {

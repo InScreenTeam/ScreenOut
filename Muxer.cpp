@@ -79,7 +79,7 @@ namespace ScreenOut
 		frame->pts = 0;		
 	}
 
-	void Muxer::WriteVideoFrame(AVPicture* buffer)
+	void Muxer::WriteVideoFrame(AVPicture* buffer, int frameNumber)
 	{		
 
 		*((AVPicture *)frame) = *buffer;
@@ -89,6 +89,7 @@ namespace ScreenOut
 		int got_packet;
 		av_init_packet(&packet);		
 		ret = avcodec_encode_video2(codec, &packet, frame, &got_packet);
+		frame->key_frame = (frameNumber % 5) ? 1 : 0;
 		if (ret < 0) 
 		{
 			logger << Logger::Level::LOG_ERROR << 
@@ -141,34 +142,25 @@ namespace ScreenOut
 			audioFrameSize = 10000;
 		else
 			audioFrameSize = codecContext->frame_size;
-
-		samplesBuffer = (int16_t*)av_malloc(audioFrameSize *
-							av_get_bytes_per_sample(codecContext->sample_fmt) *
-							codecContext->channels);
-		if (!samplesBuffer) 
-		{
-			logger << Logger::Level::LOG_ERROR << "Could not allocate audio samples buffer.";
-			throw;
-		}
 	}
 
 	void Muxer::WriteAudioFrame(int16_t* samples)
 	{
 		AVCodecContext *codecContext = audioStream->codec;
 		AVPacket pkt = { 0 };
-		AVFrame *frame = avcodec_alloc_frame();
+		AVFrame *tmpFrame = avcodec_alloc_frame();
 		int got_packet, ret;
 
 		av_init_packet(&pkt);		
 		
-		frame->nb_samples = audioFrameSize;
-		avcodec_fill_audio_frame(frame, codecContext->channels, codecContext->sample_fmt,
+		tmpFrame->nb_samples = audioFrameSize;
+		avcodec_fill_audio_frame(tmpFrame, codecContext->channels, codecContext->sample_fmt,
 								 (uint8_t *)samples,
 								 audioFrameSize *
 								 av_get_bytes_per_sample(codecContext->sample_fmt) *
 								 codecContext->channels, 1);
 
-		ret = avcodec_encode_audio2(codecContext, &pkt, frame, &got_packet);
+		ret = avcodec_encode_audio2(codecContext, &pkt, tmpFrame, &got_packet);
 		if (ret < 0) {
 			logger << Logger::Level::LOG_ERROR << "Error encoding audio frame at "
 				<< CurrentAudioTimeStamp() << "s.";
@@ -186,7 +178,7 @@ namespace ScreenOut
 			logger << Logger::Level::LOG_ERROR << "Error while writing audio frame at"
 				<< CurrentAudioTimeStamp() << "s.";								
 		}
-		avcodec_free_frame(&frame);
+		avcodec_free_frame(&tmpFrame);
 	}
 
 	double Muxer::CurrentAudioTimeStamp()
@@ -197,8 +189,7 @@ namespace ScreenOut
 
 	void Muxer::CloseAudio()
 	{
-		avcodec_close(audioStream->codec);
-		av_free(samplesBuffer);
+		avcodec_close(audioStream->codec);		
 	}
 
 	AVStream* Muxer::AddStream(AVCodec** codec, AVCodecID codecId)
@@ -289,7 +280,7 @@ namespace ScreenOut
 			} 
 			logger << Logger::Level::LOG_INFO << "Current audio frame pts: " << 
 			(double)frame->pts * audioStream->time_base.num / audioStream->time_base.den <<
-			"; Stream pts: " << CurrentVideoTimeStamp() <<
+			"; Stream pts: " << CurrentAudioTimeStamp() <<
 			";";
 			av_free_packet(&packet);
 		} while (got_packet);

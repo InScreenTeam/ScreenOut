@@ -7,7 +7,7 @@
 
 #define _USE_MATH_DEFINES
 
-#pragma comment(lib, "bass\\bass.lib")
+#pragma comment(lib, "bass.lib")
 
 #include <cstdio>
 #include <iostream>
