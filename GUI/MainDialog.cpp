@@ -2,6 +2,7 @@
 #include "afxdialogex.h"
 #include "GUI.h"
 #include "MainDialog.h"
+#include "../Configurator/Configurator.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -136,7 +137,8 @@ BOOL MainDialog::OnInitDialog()
 	doneTimer = -1;
 	isRecording = false;
 	
-
+	Configurator configurator;
+	
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 

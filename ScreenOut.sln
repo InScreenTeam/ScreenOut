@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SoundLib", "SoundLib\SoundL
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GUI", "GUI\GUI.vcxproj", "{D9C317A9-AF24-4735-A1C2-926CCDD362D6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Configurator", "Configurator\Configurator.vcxproj", "{15A0EAF3-FD49-4EAE-B388-FCF527F06416}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,6 +29,10 @@ Global
 		{D9C317A9-AF24-4735-A1C2-926CCDD362D6}.Debug|Win32.Build.0 = Debug|Win32
 		{D9C317A9-AF24-4735-A1C2-926CCDD362D6}.Release|Win32.ActiveCfg = Release|Win32
 		{D9C317A9-AF24-4735-A1C2-926CCDD362D6}.Release|Win32.Build.0 = Release|Win32
+		{15A0EAF3-FD49-4EAE-B388-FCF527F06416}.Debug|Win32.ActiveCfg = Debug|Win32
+		{15A0EAF3-FD49-4EAE-B388-FCF527F06416}.Debug|Win32.Build.0 = Debug|Win32
+		{15A0EAF3-FD49-4EAE-B388-FCF527F06416}.Release|Win32.ActiveCfg = Release|Win32
+		{15A0EAF3-FD49-4EAE-B388-FCF527F06416}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

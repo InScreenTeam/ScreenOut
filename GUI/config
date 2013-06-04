@@ -1,0 +1,11 @@
+Audio preferences
+[Audio]
+SampleRate=48000
+ByteRate=2
+AudioChanels=2
+Device=-1
+BufferLength=4096
+Video preferences
+[Video]
+FPS=10
+BitRate=10
