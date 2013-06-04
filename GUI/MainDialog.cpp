@@ -75,7 +75,7 @@ BEGIN_MESSAGE_MAP(MainDialog, CDialogEx)
 	
 	ON_MESSAGE(WM_TRAY_ICON_NOTIFY_MESSAGE, OnTrayNotify)
 	ON_BN_CLICKED(IDC_HOTKEY_BUTTON, &MainDialog::OnBnClickedHotkeyButton)
-	ON_WM_HOTKEY()
+	ON_MESSAGE(WM_HOTKEY, &MainDialog::OnHotKey)
 	ON_NOTIFY(NM_OUTOFMEMORY, IDC_RECORD_HOTKEY, &MainDialog::OnNMOutofmemoryRecordHotkey)
 END_MESSAGE_MAP()
 
@@ -121,20 +121,18 @@ BOOL MainDialog::OnInitDialog()
 	recordButton = (CButton*) this->GetDlgItem(IDC_RECORD_BUTTON);
 	
 
-	recordHotkey = (CHotKeyCtrl*) this->GetDlgItem(IDC_RECORD_HOTKEY);
-
-
-	
-	recordHotkey->SetHotKey(0x52, MOD_CONTROL | MOD_ALT);
+	recordHotkey = (CHotKeyCtrl*) this->GetDlgItem(IDC_RECORD_HOTKEY);	
+	recordHotkey->SetHotKey(0x52, HOTKEYF_CONTROL | HOTKEYF_ALT);
 	minimizeHotkey = (CHotKeyCtrl*) this->GetDlgItem(IDC_MINIMIZE_HOTKEY);
-	minimizeHotkey->SetHotKey(0x52, MOD_SHIFT | MOD_ALT);	
+	minimizeHotkey->SetHotKey(0x52, HOTKEYF_SHIFT | HOTKEYF_ALT);	
 	recordHotkeyId = 21;
 	minimizeHotkeyId = 13;	
 
-	//OnBnClickedHotkeyButton();
+	OnBnClickedHotkeyButton();
 
 	doneTimer = -1;
 	isRecording = false;
+	isHidden = false;
 	
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -269,38 +267,50 @@ void MainDialog::Record()
 		
 	}
 	else
-	{
-		m_nidIconData.hWnd = m_hWnd;// it is necessary!
-		TrayShow();
-		ShowWindow(SW_HIDE);
-		CDialogEx(recordHotkeyId);
+	{	
 		recorder = new Recorder();
 		isRecording = true;
 		recordButton->SetWindowTextW(L"Stop recording");
 		recorder->Start();			
+		Minimize();
 			
 	}
 
 }
 
-void MainDialog::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
-{
-	
-	if((nKey1 == HIWORD(recordKey)) && (nKey2 == LOWORD(recordKey)))
+LRESULT MainDialog::OnHotKey(WPARAM wParam, LPARAM lParam)
+{	
+	if(LOWORD(lParam) == recordKeyMod && HIWORD(lParam) == recordKey)
 		Record();
-	else if((nKey1 == HIWORD(minimizeKey)) && (nKey2 == LOWORD(minimizeKey)))
-		Minimize();
-	CDialogEx::OnHotKey(nHotKeyId, nKey1, nKey2);
+	else if(LOWORD(lParam) == minimizeKeyMod && HIWORD(lParam) == minimizeKey)
+		Minimize();		
+	return 0;
 }
 
 void MainDialog::OnBnClickedHotkeyButton()
+{	
+	RegisterHotKeyFromControl(recordHotkey, recordHotkeyId, &recordKey, &recordKeyMod);
+	RegisterHotKeyFromControl(minimizeHotkey, minimizeHotkeyId, &minimizeKey, &minimizeKeyMod);
+}
+
+BOOL MainDialog::RegisterHotKeyFromControl(CHotKeyCtrl* control, UINT id, WORD* keyStorage, WORD* keyModStorage)
 {
-	UnregisterHotKey(m_hWnd, recordHotkeyId);
-	UnregisterHotKey(m_hWnd, minimizeHotkeyId);
-	recordKey = recordHotkey->GetHotKey();
-	minimizeKey = minimizeHotkey->GetHotKey();
-	RegisterHotKey(m_hWnd, recordHotkeyId, HIWORD(recordKey), LOWORD(recordKey));
-	RegisterHotKey(m_hWnd, minimizeHotkeyId, HIWORD(minimizeKey), LOWORD(minimizeKey));
+	UnregisterHotKey(m_hWnd, id);
+	control->GetHotKey(*keyStorage, *keyModStorage);
+	*keyModStorage = GetKeyModifiers(*keyModStorage);		
+	return RegisterHotKey(m_hWnd, id, *keyModStorage, *keyStorage);
+}
+
+WORD MainDialog::GetKeyModifiers(WORD flags)
+{
+	UINT modifiers = 0;
+	if(flags & HOTKEYF_ALT)
+		modifiers |= MOD_ALT;
+	if(flags & HOTKEYF_SHIFT)
+		modifiers |= MOD_SHIFT;
+	if(flags & HOTKEYF_CONTROL)
+		modifiers |= MOD_CONTROL;
+	return modifiers;
 }
 
 void MainDialog::OnTrayLButtonDown( CPoint pt )
@@ -324,7 +334,6 @@ void MainDialog::OnTrayRButtonDown( CPoint pt )
 
 void MainDialog::OnTrayRButtonDblClk( CPoint pt )
 {
-
 	
 
 }
@@ -386,7 +395,19 @@ void MainDialog::TraySetToolTip( LPCTSTR lpszToolTip )
 
 void MainDialog::Minimize()
 {
-	TrayShow();
+	if(isHidden)
+	{
+		TrayHide();
+		ShowWindow(SW_SHOW);		
+		isHidden = false;
+	}
+	else
+	{
+		m_nidIconData.hWnd = m_hWnd;// it is necessary!
+		TrayShow();
+		ShowWindow(SW_HIDE);
+		isHidden = true;
+	}
 }
 
 BOOL MainDialog::TrayHide()
