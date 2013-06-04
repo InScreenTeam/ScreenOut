@@ -37,10 +37,8 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2);
-private:
-	 afx_msg LRESULT OnTrayNotify(WPARAM, LPARAM);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);	
+	afx_msg LRESULT OnTrayNotify(WPARAM, LPARAM);
 protected:
 	DECLARE_MESSAGE_MAP()	
 
@@ -50,14 +48,18 @@ protected:
 	CStatic* processingLabel;
 	CButton* recordButton;
 	CHotKeyCtrl* recordHotkey;
-	DWORD recordKey;
+	WORD recordKey;
+	WORD recordKeyMod;
 	CHotKeyCtrl* minimizeHotkey;
-	DWORD minimizeKey;
+	WORD minimizeKey;
+	WORD minimizeKeyMod;
 	UINT recordHotkeyId, minimizeHotkeyId;
 	UINT doneTimer;
+	bool isHidden;
 public:
 	afx_msg void OnBnClickedRecordButton();
 	afx_msg void OnBnClickedHotkeyButton();
+	afx_msg LRESULT OnHotKey(WPARAM, LPARAM);
 private:
 	BOOL			m_bMinimizeToTray;
 	BOOL			m_bTrayIconVisible;
@@ -77,8 +79,9 @@ private:
 	void TraySetIcon(HICON hIcon);
 	void TraySetIcon(UINT nResourceID);
 	void TraySetIcon(LPCTSTR lpszResourceName);
-
-	
+private:
+	BOOL RegisterHotKeyFromControl(CHotKeyCtrl* control, UINT id, WORD* keyStorage, WORD* keyModStorage);
+	WORD MainDialog::GetKeyModifiers(WORD flags);
 protected:
 	virtual void OnTrayLButtonDown(CPoint pt);
 	virtual void OnTrayLButtonDblClk(CPoint pt);
