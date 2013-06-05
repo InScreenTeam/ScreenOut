@@ -113,9 +113,7 @@ BOOL MainDialog::OnInitDialog()
 
 	TraySetIcon(IDR_MAINFRAME);
 	TraySetToolTip(L"ToolTip for tray icon");
-	TraySetMenu(IDR_TRAY_MENU);
-	//TraySetMenu(m_mnuTrayMenu.m_hMenu);
-	
+	TraySetMenu(IDR_TRAY_MENU);		
 
 	processingLabel = (CStatic*) this->GetDlgItem(IDC_PROCESSING_LABEL);
 	recordButton = (CButton*) this->GetDlgItem(IDC_RECORD_BUTTON);
@@ -327,9 +325,11 @@ void MainDialog::OnTrayLButtonDblClk( CPoint pt )
 			this->ShowWindow(SW_SHOW);
 }
 
-void MainDialog::OnTrayRButtonDown( CPoint pt )
-{
-
+void MainDialog::OnTrayRButtonDown(CPoint pt)
+{	
+	BOOL x = m_mnuTrayMenu.TrackPopupMenu(TPM_RIGHTALIGN |TPM_LEFTBUTTON | TPM_BOTTOMALIGN, 
+		pt.x - 300, pt.y-100, this);	
+	
 }
 
 void MainDialog::OnTrayRButtonDblClk( CPoint pt )
@@ -349,7 +349,7 @@ void MainDialog::OnTrayMouseMove( CPoint pt )
 BOOL MainDialog::TraySetMenu( UINT nResourceID,UINT nDefaultPo)
 {
 	BOOL bSuccess;
-	bSuccess = m_mnuTrayMenu.LoadMenu(nResourceID);
+	bSuccess = m_mnuTrayMenu.LoadMenu(nResourceID);	
 	return bSuccess;
 
 }
