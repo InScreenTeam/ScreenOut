@@ -1,14 +1,9 @@
 #pragma once
+
+#include "ConfigClasses.h"
+
 #define FILE_NAME "config"
 
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <functional>
-#include <map>
-#include "ConfigClasses.h"
 using namespace std;
 using namespace Config;
 

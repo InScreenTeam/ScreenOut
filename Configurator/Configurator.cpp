@@ -1,7 +1,12 @@
 #include "stdafx.h"
-#include "Configurator.h"
-#include "ConfigClasses.h"
+
+#include <fstream>
+#include <algorithm>
+#include <functional>
 #include <map>
+
+#include "ConfigClasses.h"
+#include "Configurator.h"
 
 using namespace Config;
 

@@ -33,6 +33,15 @@
     <ClInclude Include="BaseConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AudioConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Record.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -41,10 +50,13 @@
     <ClCompile Include="Configurator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigClasses.cpp">
+    <ClCompile Include="BaseConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BaseConfig.cpp">
+    <ClCompile Include="AudioConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
