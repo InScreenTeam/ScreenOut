@@ -9,20 +9,16 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-// CAboutDlg dialog used for App About
-
 class CAboutDlg : public CDialogEx
 {
 public:
 	CAboutDlg();
 
-// Dialog Data
 	enum { IDD = IDD_ABOUTBOX };
 
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	virtual void DoDataExchange(CDataExchange* pDX);
 
-// Implementation
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -39,23 +35,19 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
-
-//
-// MainDialog dialog
-//
 MainDialog::MainDialog(CWnd* pParent /*=NULL*/): CDialogEx(MainDialog::IDD, pParent)
 {
-	m_nidIconData.hWnd				= m_hWnd;
+	trayIconData.hWnd				= m_hWnd;
 	m_hIcon							= AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_nidIconData.cbSize			= sizeof(NOTIFYICONDATA);
-	m_nidIconData.uID				= 1;
-	m_nidIconData.uCallbackMessage	= WM_TRAY_ICON_NOTIFY_MESSAGE;
-	m_nidIconData.hIcon				= 0;
-	m_nidIconData.szTip[0]			= 0;	
-	m_nidIconData.uFlags			=  NIF_ICON | NIF_MESSAGE | NIF_TIP;
+	trayIconData.cbSize			= sizeof(NOTIFYICONDATA);
+	trayIconData.uID				= 1;
+	trayIconData.uCallbackMessage	= WM_TRAY_ICON_NOTIFY_MESSAGE;
+	trayIconData.hIcon				= 0;
+	trayIconData.szTip[0]			= 0;	
+	trayIconData.uFlags			=  NIF_ICON | NIF_MESSAGE | NIF_TIP;
 	
-	m_bTrayIconVisible				= FALSE;
-	m_nDefaultMenuItem				= 0;
+	isTrayIconVisible				= FALSE;
+	trayMenuDefaultItem				= 0;
 	m_bMinimizeToTray				= TRUE;
 }
 
@@ -63,7 +55,6 @@ void MainDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
-
 
 BEGIN_MESSAGE_MAP(MainDialog, CDialogEx)	
 	
@@ -79,16 +70,11 @@ BEGIN_MESSAGE_MAP(MainDialog, CDialogEx)
 	ON_NOTIFY(NM_OUTOFMEMORY, IDC_RECORD_HOTKEY, &MainDialog::OnNMOutofmemoryRecordHotkey)
 END_MESSAGE_MAP()
 
-
-// MainDialog message handlers
-
+#pragma region Generated
 BOOL MainDialog::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// Add "About..." menu item to system menu.
-
-	// IDM_ABOUTBOX must be in the system command range.
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 
@@ -105,20 +91,17 @@ BOOL MainDialog::OnInitDialog()
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
 	}
-
-	// Set the icon for this dialog.  The framework does this automatically
-	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	
+	SetIcon(m_hIcon, TRUE);
+	SetIcon(m_hIcon, FALSE);
 
 	TraySetIcon(IDR_MAINFRAME);
 	TraySetToolTip(L"ToolTip for tray icon");
-	TraySetMenu(IDR_TRAY_MENU);		
+	TraySetMenu(IDR_TRAY_MENU);
 
 	processingLabel = (CStatic*) this->GetDlgItem(IDC_PROCESSING_LABEL);
 	recordButton = (CButton*) this->GetDlgItem(IDC_RECORD_BUTTON);
 	
-
 	recordHotkey = (CHotKeyCtrl*) this->GetDlgItem(IDC_RECORD_HOTKEY);	
 	recordHotkey->SetHotKey(0x52, HOTKEYF_CONTROL | HOTKEYF_ALT);
 	minimizeHotkey = (CHotKeyCtrl*) this->GetDlgItem(IDC_MINIMIZE_HOTKEY);
@@ -133,7 +116,7 @@ BOOL MainDialog::OnInitDialog()
 	isHidden = false;
 	
 
-	return TRUE;  // return TRUE  unless you set the focus to a control
+	return TRUE;
 }
 
 void MainDialog::OnSysCommand(UINT nID, LPARAM lParam)
@@ -149,27 +132,21 @@ void MainDialog::OnSysCommand(UINT nID, LPARAM lParam)
 	}
 }
 
-// If you add a minimize button to your dialog, you will need the code below
-//  to draw the icon.  For MFC applications using the document/view model,
-//  this is automatically done for you by the framework.
-
 void MainDialog::OnPaint()
 {	
 	if (IsIconic())
 	{
-		CPaintDC dc(this); // device context for painting
+		CPaintDC dc(this);
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-		// Center icon in client rectangle
+		
 		int cxIcon = GetSystemMetrics(SM_CXICON);
 		int cyIcon = GetSystemMetrics(SM_CYICON);
 		CRect rect;
 		GetClientRect(&rect);
 		int x = (rect.Width() - cxIcon + 1) / 2;
 		int y = (rect.Height() - cyIcon + 1) / 2;
-
-		// Draw the icon
+		
 		dc.DrawIcon(x, y, m_hIcon);
 	}
 	else
@@ -178,63 +155,13 @@ void MainDialog::OnPaint()
 	}
 }
 
-// The system calls this function to obtain the cursor to display while the user drags
-//  the minimized window.
 HCURSOR MainDialog::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+#pragma endregion Dialog init
 
-LRESULT MainDialog::OnTrayNotify(WPARAM wParam,LPARAM lParam)
-{ 
-	UINT uID; 
-	UINT uMsg; 
-
-	uID = (UINT) wParam; 
-	uMsg = (UINT)lParam; 
-			
-	if (uID != 1)
-		return uID;
-
-	CPoint pt;	
-
-	switch (uMsg ) 
-	{ 
-	case WM_MOUSEMOVE:
-		GetCursorPos(&pt);
-		ClientToScreen(&pt);
-		OnTrayMouseMove(pt);
-		break;
-	case WM_LBUTTONDOWN:
-		GetCursorPos(&pt);
-		ClientToScreen(&pt);
-		OnTrayLButtonDown(pt);
-		break;
-	case WM_LBUTTONDBLCLK:
-		GetCursorPos(&pt);
-		ClientToScreen(&pt);
-		OnTrayLButtonDblClk(pt);
-		break;
-
-	case WM_RBUTTONDOWN:
-	case WM_CONTEXTMENU:
-		GetCursorPos(&pt);
-		ClientToScreen(&pt);
-		OnTrayRButtonDown(pt);
-		break;
-	case WM_RBUTTONDBLCLK:
-		GetCursorPos(&pt);
-		ClientToScreen(&pt);
-		OnTrayRButtonDblClk(pt);
-		break;
-	} 
-	TrayUpdate();
-	return 1;
-	
-} 
-
-
-
+#pragma region Record
 
 void MainDialog::OnTimer(UINT nIDEvent)
 {
@@ -296,7 +223,7 @@ BOOL MainDialog::RegisterHotKeyFromControl(CHotKeyCtrl* control, UINT id, WORD* 
 	UnregisterHotKey(m_hWnd, id);
 	control->GetHotKey(*keyStorage, *keyModStorage);
 	*keyModStorage = GetKeyModifiers(*keyModStorage);		
-	return RegisterHotKey(m_hWnd, id, *keyModStorage, *keyStorage);
+	return RegisterHotKey(m_hWnd, id, *keyModStorage | MOD_NOREPEAT, *keyStorage);
 }
 
 WORD MainDialog::GetKeyModifiers(WORD flags)
@@ -310,88 +237,100 @@ WORD MainDialog::GetKeyModifiers(WORD flags)
 		modifiers |= MOD_CONTROL;
 	return modifiers;
 }
+#pragma endregion Recording infrastructure
 
-void MainDialog::OnTrayLButtonDown( CPoint pt )
-{
-	if(m_bMinimizeToTray)
-		if(TrayHide())
-			this->ShowWindow(SW_SHOW);
-}
+#pragma region Tray
 
-void MainDialog::OnTrayLButtonDblClk( CPoint pt )
-{
-	if(m_bMinimizeToTray)
-		if(TrayHide())
-			this->ShowWindow(SW_SHOW);
-}
-
-void MainDialog::OnTrayRButtonDown(CPoint pt)
+#pragma region Tray init
+BOOL MainDialog::TraySetMenu(UINT nResourceID, UINT nDefaultPo)
 {	
-	BOOL x = m_mnuTrayMenu.TrackPopupMenu(TPM_RIGHTALIGN |TPM_LEFTBUTTON | TPM_BOTTOMALIGN, 
-		pt.x - 300, pt.y-100, this);	
-	
+	return trayMenu.LoadMenu(nResourceID);	
 }
 
-void MainDialog::OnTrayRButtonDblClk( CPoint pt )
-{
-	
-
-}
-
-void MainDialog::OnTrayMouseMove( CPoint pt )
-{
-
-}
-
-
-
-
-BOOL MainDialog::TraySetMenu( UINT nResourceID,UINT nDefaultPo)
-{
-	BOOL bSuccess;
-	bSuccess = m_mnuTrayMenu.LoadMenu(nResourceID);	
-	return bSuccess;
-
-}
-
-BOOL MainDialog::TraySetMenu( HMENU hMenu,UINT nDefaultPos )
-{
-
-	m_mnuTrayMenu.Attach(hMenu);
-	return TRUE;
-}
-
-BOOL MainDialog::TraySetMenu( LPCTSTR lpszMenuName,UINT nDefaultPos )
-{
-	BOOL bSuccess;
-	bSuccess = m_mnuTrayMenu.LoadMenu(lpszMenuName);
-	return bSuccess;
-
-}
-
-void MainDialog::TraySetIcon( UINT nResourceID )
+void MainDialog::TraySetIcon(UINT nResourceID)
 {	
-	ASSERT(nResourceID>0);
+	ASSERT(nResourceID > 0);
 	HICON hIcon = 0;
 	hIcon = AfxGetApp()->LoadIcon(nResourceID);
 	if(hIcon)
 	{
-		m_nidIconData.hIcon = hIcon;
-		//m_nidIconData.uFlags = NIF_ICON;
-	}
-	else
-	{
-		TRACE0("FAILED TO LOAD ICON\n");
+		trayIconData.hIcon = hIcon;
+		//trayIconData.uFlags = NIF_ICON;
 	}
 }
 
-void MainDialog::TraySetToolTip( LPCTSTR lpszToolTip )
+void MainDialog::TraySetToolTip(LPCTSTR lpszToolTip)
 {
-	//ASSERT(strlen(lpszToolTip) > 0 && strlen(lpszToolTip) < 64);
-	
-	StrCpyW(m_nidIconData.szTip,lpszToolTip);
-	m_nidIconData.uFlags |=NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	StrCpyW(trayIconData.szTip, lpszToolTip);
+	trayIconData.uFlags |= NIF_MESSAGE | NIF_ICON | NIF_TIP;
 }
+#pragma endregion
+
+#pragma region Tray events
+LRESULT MainDialog::OnTrayNotify(WPARAM wParam,LPARAM lParam)
+{ 
+	UINT uID = (UINT) wParam; 
+	UINT uMsg = (UINT)lParam; 
+			
+	if (uID != 1)
+		return uID;
+
+	CPoint cursorPosition;	
+	switch (uMsg) 
+	{ 
+	case WM_MOUSEMOVE:
+		GetCursorPos(&cursorPosition);		
+		OnTrayMouseMove(cursorPosition);
+		break;
+	case WM_LBUTTONDOWN:
+		GetCursorPos(&cursorPosition);		
+		OnTrayLButtonDown(cursorPosition);
+		break;
+	case WM_LBUTTONDBLCLK:
+		GetCursorPos(&cursorPosition);		
+		OnTrayLButtonDblClk(cursorPosition);
+		break;
+	case WM_RBUTTONDOWN:
+	case WM_CONTEXTMENU:
+		GetCursorPos(&cursorPosition);	
+		OnTrayRButtonDown(cursorPosition);
+		break;
+	} 
+	TrayUpdate();
+	return 1;
+	
+}
+
+void MainDialog::OnTrayLButtonDown( CPoint cursorPosition )
+{
+	if(m_bMinimizeToTray)
+		if(TrayHide())
+			this->ShowWindow(SW_SHOW);
+}
+
+void MainDialog::OnTrayLButtonDblClk( CPoint cursorPosition )
+{
+	if(m_bMinimizeToTray)
+		if(TrayHide())
+			this->ShowWindow(SW_SHOW);
+}
+
+void MainDialog::OnTrayRButtonDown(CPoint cursorPosition)
+{	
+	UINT flags = TPM_RIGHTALIGN 
+		|TPM_LEFTBUTTON 
+		| TPM_BOTTOMALIGN 
+		| TPM_RETURNCMD;
+	trayMenu.GetSubMenu(0)->TrackPopupMenu(flags, 
+		cursorPosition.x, cursorPosition.y, this);	
+	
+}
+
+void MainDialog::OnTrayMouseMove( CPoint cursorPosition )
+{
+
+}
+#pragma endregion
 
 void MainDialog::Minimize()
 {
@@ -403,7 +342,7 @@ void MainDialog::Minimize()
 	}
 	else
 	{
-		m_nidIconData.hWnd = m_hWnd;// it is necessary!
+		trayIconData.hWnd = m_hWnd;// it is necessary!
 		TrayShow();
 		ShowWindow(SW_HIDE);
 		isHidden = true;
@@ -413,15 +352,11 @@ void MainDialog::Minimize()
 BOOL MainDialog::TrayHide()
 {
 	BOOL bSuccess = FALSE;
-	if(m_bTrayIconVisible)
+	if(isTrayIconVisible)
 	{
-		bSuccess = Shell_NotifyIcon(NIM_DELETE,&m_nidIconData);
+		bSuccess = Shell_NotifyIcon(NIM_DELETE,&trayIconData);
 		if(bSuccess)
-			m_bTrayIconVisible= FALSE;
-	}
-	else
-	{
-		TRACE0("ICON ALREADY HIDDEN");
+			isTrayIconVisible= FALSE;
 	}
 	return bSuccess;
 }
@@ -429,15 +364,11 @@ BOOL MainDialog::TrayHide()
 BOOL MainDialog::TrayShow()
 {
 	BOOL bSuccess = FALSE;
-	if(!m_bTrayIconVisible)
+	if(!isTrayIconVisible)
 	{
-		bSuccess = Shell_NotifyIcon(NIM_ADD,&m_nidIconData);
+		bSuccess = Shell_NotifyIcon(NIM_ADD,&trayIconData);
 		if(bSuccess)
-			m_bTrayIconVisible= TRUE;
-	}
-	else
-	{
-		TRACE0("ICON ALREADY VISIBLE");
+			isTrayIconVisible= TRUE;
 	}
 	return bSuccess;
 }
@@ -445,31 +376,14 @@ BOOL MainDialog::TrayShow()
 BOOL MainDialog::TrayUpdate()
 {
 	BOOL bSuccess = FALSE;
-	if(m_bTrayIconVisible)
+	if(isTrayIconVisible)
 	{
-		bSuccess = Shell_NotifyIcon(NIM_MODIFY,&m_nidIconData);
-	}
-	else
-	{
-		TRACE0("ICON NOT VISIBLE");
+		bSuccess = Shell_NotifyIcon(NIM_MODIFY,&trayIconData);
 	}
 	return bSuccess;
 
 }
-
-void MainDialog::TraySetMinimizeToTray( BOOL bMinimizeToTray /*= TRUE*/ )
-{
-
-}
-
-BOOL MainDialog::TrayIsVisible()
-{
-	return 1;
-}
-
-
-
-
+#pragma endregion Minimize to tray infrastructure
 
 void MainDialog::OnNMOutofmemoryRecordHotkey(NMHDR *pNMHDR, LRESULT *pResult)
 {
