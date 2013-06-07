@@ -37,18 +37,18 @@ END_MESSAGE_MAP()
 
 MainDialog::MainDialog(CWnd* pParent /*=NULL*/): CDialogEx(MainDialog::IDD, pParent)
 {
-	trayIconData.hWnd				= m_hWnd;
-	m_hIcon							= AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	trayIconData.cbSize			= sizeof(NOTIFYICONDATA);
-	trayIconData.uID				= 1;
-	trayIconData.uCallbackMessage	= WM_TRAY_ICON_NOTIFY_MESSAGE;
-	trayIconData.hIcon				= 0;
-	trayIconData.szTip[0]			= 0;	
-	trayIconData.uFlags			=  NIF_ICON | NIF_MESSAGE | NIF_TIP;
+	trayIconData.hWnd = m_hWnd;
+	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	trayIconData.cbSize = sizeof(NOTIFYICONDATA);
+	trayIconData.uID = 1;
+	trayIconData.uCallbackMessage = WM_TRAY_ICON_NOTIFY_MESSAGE;
+	trayIconData.hIcon = 0;
+	trayIconData.szTip[0] = 0;
+	trayIconData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
 	
-	isTrayIconVisible				= FALSE;
-	trayMenuDefaultItem				= 0;
-	m_bMinimizeToTray				= TRUE;
+	isTrayIconVisible = FALSE;
+	trayMenuDefaultItem = 0;
+	trayMenu = new CMenu();
 }
 
 void MainDialog::DoDataExchange(CDataExchange* pDX)
@@ -168,8 +168,8 @@ void MainDialog::OnTimer(UINT nIDEvent)
 	if((recorder->IsDone()))
 	{
 		delete recorder;
-		processingLabel->ShowWindow(SW_HIDE);	
-		KillTimer(doneTimer);	
+		processingLabel->ShowWindow(SW_HIDE);
+		KillTimer(doneTimer);
 	}
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -185,7 +185,7 @@ void MainDialog::Record()
 	{
 		
 		recorder->Stop();	
-		processingLabel->ShowWindow(SW_SHOW);			
+		processingLabel->ShowWindow(SW_SHOW);
 		isRecording = false;
 		recordButton->SetWindowTextW(L"Start recording");
 		doneTimer = SetTimer(1, 50, NULL);
@@ -196,7 +196,7 @@ void MainDialog::Record()
 		recorder = new Recorder();
 		isRecording = true;
 		recordButton->SetWindowTextW(L"Stop recording");
-		recorder->Start();			
+		recorder->Start();
 		Minimize();
 			
 	}
@@ -208,7 +208,7 @@ LRESULT MainDialog::OnHotKey(WPARAM wParam, LPARAM lParam)
 	if(LOWORD(lParam) == recordKeyMod && HIWORD(lParam) == recordKey)
 		Record();
 	else if(LOWORD(lParam) == minimizeKeyMod && HIWORD(lParam) == minimizeKey)
-		Minimize();		
+		Minimize();
 	return 0;
 }
 
@@ -243,19 +243,18 @@ WORD MainDialog::GetKeyModifiers(WORD flags)
 
 #pragma region Tray init
 BOOL MainDialog::TraySetMenu(UINT nResourceID, UINT nDefaultPo)
-{	
-	return trayMenu.LoadMenu(nResourceID);	
+{
+	return trayMenu->LoadMenu(nResourceID);
 }
 
 void MainDialog::TraySetIcon(UINT nResourceID)
-{	
+{
 	ASSERT(nResourceID > 0);
 	HICON hIcon = 0;
 	hIcon = AfxGetApp()->LoadIcon(nResourceID);
 	if(hIcon)
 	{
 		trayIconData.hIcon = hIcon;
-		//trayIconData.uFlags = NIF_ICON;
 	}
 }
 
@@ -269,30 +268,30 @@ void MainDialog::TraySetToolTip(LPCTSTR lpszToolTip)
 #pragma region Tray events
 LRESULT MainDialog::OnTrayNotify(WPARAM wParam,LPARAM lParam)
 { 
-	UINT uID = (UINT) wParam; 
-	UINT uMsg = (UINT)lParam; 
-			
+	UINT uID = (UINT) wParam;
+	UINT uMsg = (UINT)lParam;
+
 	if (uID != 1)
 		return uID;
 
-	CPoint cursorPosition;	
-	switch (uMsg) 
+	CPoint cursorPosition;
+	switch (uMsg)
 	{ 
 	case WM_MOUSEMOVE:
-		GetCursorPos(&cursorPosition);		
+		GetCursorPos(&cursorPosition);
 		OnTrayMouseMove(cursorPosition);
 		break;
 	case WM_LBUTTONDOWN:
-		GetCursorPos(&cursorPosition);		
+		GetCursorPos(&cursorPosition);
 		OnTrayLButtonDown(cursorPosition);
 		break;
 	case WM_LBUTTONDBLCLK:
-		GetCursorPos(&cursorPosition);		
+		GetCursorPos(&cursorPosition);
 		OnTrayLButtonDblClk(cursorPosition);
 		break;
 	case WM_RBUTTONDOWN:
 	case WM_CONTEXTMENU:
-		GetCursorPos(&cursorPosition);	
+		GetCursorPos(&cursorPosition);
 		OnTrayRButtonDown(cursorPosition);
 		break;
 	} 
@@ -303,16 +302,14 @@ LRESULT MainDialog::OnTrayNotify(WPARAM wParam,LPARAM lParam)
 
 void MainDialog::OnTrayLButtonDown( CPoint cursorPosition )
 {
-	if(m_bMinimizeToTray)
-		if(TrayHide())
-			this->ShowWindow(SW_SHOW);
+	if(TrayHide())
+		this->ShowWindow(SW_SHOW);
 }
 
 void MainDialog::OnTrayLButtonDblClk( CPoint cursorPosition )
 {
-	if(m_bMinimizeToTray)
-		if(TrayHide())
-			this->ShowWindow(SW_SHOW);
+	if(TrayHide())
+		this->ShowWindow(SW_SHOW);
 }
 
 void MainDialog::OnTrayRButtonDown(CPoint cursorPosition)
@@ -321,12 +318,12 @@ void MainDialog::OnTrayRButtonDown(CPoint cursorPosition)
 		|TPM_LEFTBUTTON 
 		| TPM_BOTTOMALIGN 
 		| TPM_RETURNCMD;
-	trayMenu.GetSubMenu(0)->TrackPopupMenu(flags, 
-		cursorPosition.x, cursorPosition.y, this);	
+	trayMenu->GetSubMenu(0)->TrackPopupMenu(flags, 
+		cursorPosition.x, cursorPosition.y, this);
 	
 }
 
-void MainDialog::OnTrayMouseMove( CPoint cursorPosition )
+void MainDialog::OnTrayMouseMove(CPoint cursorPosition)
 {
 
 }
@@ -337,7 +334,7 @@ void MainDialog::Minimize()
 	if(isHidden)
 	{
 		TrayHide();
-		ShowWindow(SW_SHOW);		
+		ShowWindow(SW_SHOW);
 		isHidden = false;
 	}
 	else
