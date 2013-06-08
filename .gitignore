@@ -49,3 +49,6 @@ $tf*/
 *.BACKUP*
 *.REMOTE*
 *.bmp
+/boost_1_53_0
+/clone
+/SoundLib/bass

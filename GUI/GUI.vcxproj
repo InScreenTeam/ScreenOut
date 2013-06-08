@@ -53,12 +53,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\SoundLib\include;D:\Study\boost_1_53_0;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\boost_1_53_0;..\SoundLib\include;D:\Study\boost_1_53_0;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\SoundLib\;D:\Study\boost_1_53_0\stage\lib;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\boost_1_53_0\stage\lib;..\lib;D:\Study\boost_1_53_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -125,6 +125,9 @@
     <Image Include="res\GUI.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Configurator\Configurator.vcxproj">
+      <Project>{15a0eaf3-fd49-4eae-b388-fcf527f06416}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Muxing.vcxproj">
       <Project>{2f5fb67e-b1c1-41aa-86a9-a6383bcb8bf8}</Project>
     </ProjectReference>
