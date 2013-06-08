@@ -4,6 +4,7 @@
 #pragma once
 
 #include "..\Recorder.h"
+#include "..\Configurator\Configurator.h"
 
 using namespace ScreenOut;
 
@@ -15,10 +16,10 @@ public:
 	MainDialog(CWnd* pParent = NULL);
 
 	enum { IDD = IDD_GUI_DIALOG };
-
+	Configurator conf;
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);
-
+	
 protected:
 	HICON m_hIcon;
 
